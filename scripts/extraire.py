@@ -42,6 +42,8 @@ REPRISE_META = DATA_DIR / ".extraction-en-cours.json"
 REPRISE_DATA = DATA_DIR / ".extraction-en-cours.jsonl"
 
 PAGE_SIZE = 100
+TIMEOUT_S = 90  # une page avec changelog peut être lente sur l'instance interne
+REESSAIS_MAX = 5
 
 # Marge retranchée à la borne « updated » pour absorber les écarts de fuseau
 # entre l'horodatage renvoyé par Jira et celui du profil du jeton. Quelques
@@ -141,6 +143,25 @@ def nettoyer_reprise() -> None:
     REPRISE_DATA.unlink(missing_ok=True)
 
 
+def _get_avec_reessais(session: requests.Session, params: dict) -> requests.Response:
+    """Une page lente ou un 5xx passager ne doit pas faire perdre l'extraction."""
+    for essai in range(1, REESSAIS_MAX + 1):
+        try:
+            resp = session.get(
+                f"{JIRA_BASE_URL}/rest/api/2/search", params=params, timeout=TIMEOUT_S
+            )
+            if resp.status_code < 500:
+                return resp
+            erreur = f"HTTP {resp.status_code}"
+        except (requests.Timeout, requests.ConnectionError) as e:
+            erreur = type(e).__name__
+        if essai == REESSAIS_MAX:
+            sys.exit(f"Abandon après {REESSAIS_MAX} essais ({erreur}) — relance pour reprendre.")
+        attente = 5 * essai
+        print(f"  {erreur} — nouvel essai {essai + 1}/{REESSAIS_MAX} dans {attente} s...", file=sys.stderr)
+        time.sleep(attente)
+
+
 def extraire(jql: str) -> list:
     session = _session()
     start_at, issues = charger_reprise(jql)
@@ -148,17 +169,13 @@ def extraire(jql: str) -> list:
         REPRISE_DATA.write_text("", encoding="utf-8")
 
     while True:
-        resp = session.get(
-            f"{JIRA_BASE_URL}/rest/api/2/search",
-            params={
-                "jql": jql,
-                "startAt": start_at,
-                "maxResults": PAGE_SIZE,
-                "fields": ",".join(FIELDS),
-                "expand": "changelog",
-            },
-            timeout=30,
-        )
+        resp = _get_avec_reessais(session, {
+            "jql": jql,
+            "startAt": start_at,
+            "maxResults": PAGE_SIZE,
+            "fields": ",".join(FIELDS),
+            "expand": "changelog",
+        })
         if resp.status_code != 200:
             sys.exit(f"Erreur Jira {resp.status_code} : {resp.text[:500]}")
 
