@@ -9,7 +9,9 @@ Hypothèses à ajuster si ton instance Jira utilise d'autres libellés que
 ceux vus dans les tableaux de bord actuels — voir STATUTS_* ci-dessous.
 
 Usage :
-    python scripts/analyser.py
+    python scripts/analyser.py            # billets One Portail (label automatedcreation)
+    python scripts/analyser.py --directs  # billets créés directement au board
+    python scripts/analyser.py --tous     # tout le projet
 """
 import json
 import statistics
@@ -25,6 +27,9 @@ RAPPORTS_DIR = BASE_DIR / "rapports"
 # Ajuster ces libellés à ceux réellement utilisés dans le projet PECARTES.
 STATUTS_ATTENTE_TIERS = {"Waiting for support", "Waiting for delivery"}
 STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved"}
+
+# Marque les billets ouverts via One Portail (liste triage) — voir plan.md.
+LABEL_ONEPORTAIL = "automatedcreation"
 
 # Nom du champ personnalisé "External issue ID" — à confirmer dans Jira
 # et à faire correspondre à FIELDS dans extraire.py.
@@ -355,15 +360,32 @@ def generer_rapport(a: Analyse) -> str:
     return "\n".join(L)
 
 
+def _est_oneportail(issue) -> bool:
+    return LABEL_ONEPORTAIL in (issue["fields"].get("labels") or [])
+
+
 def main() -> None:
-    issues = charger_billets()
+    tous = charger_billets()
+    oneportail = [i for i in tous if _est_oneportail(i)]
+    directs = [i for i in tous if not _est_oneportail(i)]
+    print(f"Répartition : {len(tous)} billets = {len(oneportail)} One Portail "
+          f"({LABEL_ONEPORTAIL}) + {len(directs)} autres", file=sys.stderr)
+
+    # Le périmètre de l'étape 1 (plan.md) est la liste triage, donc One Portail.
+    if "--tous" in sys.argv:
+        issues, suffixe = tous, "-tous"
+    elif "--directs" in sys.argv:
+        issues, suffixe = directs, "-directs"
+    else:
+        issues, suffixe = oneportail, ""
+
     a = Analyse(issues)
     rapport = generer_rapport(a)
 
     RAPPORTS_DIR.mkdir(exist_ok=True)
-    out = RAPPORTS_DIR / "donnees-actuelles.md"
+    out = RAPPORTS_DIR / f"donnees-actuelles{suffixe}.md"
     out.write_text(rapport, encoding="utf-8")
-    print(f"Rapport écrit → {out}", file=sys.stderr)
+    print(f"Rapport écrit → {out} ({len(issues)} billets)", file=sys.stderr)
 
 
 if __name__ == "__main__":
