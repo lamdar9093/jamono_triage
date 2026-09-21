@@ -127,11 +127,22 @@ def charger_reprise(jql: str):
         nettoyer_reprise()
         return 0, []
 
-    start_at = int(meta.get("start_at", 0))
-    lignes = REPRISE_DATA.read_text(encoding="utf-8").splitlines()
-    # Le .jsonl peut dépasser start_at si l'arrêt a eu lieu entre l'ajout des
-    # billets et l'écriture de la position — on tronque pour rester cohérent.
-    issues = [json.loads(l) for l in lignes[:start_at] if l.strip()]
+    # Le .jsonl fait foi, pas la position du .json : un crash peut laisser la
+    # dernière ligne coupée. On garde les lignes valides jusqu'à la première
+    # ligne illisible, puis on réécrit le fichier pour que les ajouts suivants
+    # repartent sur une base propre.
+    issues = []
+    for ligne in REPRISE_DATA.read_text(encoding="utf-8").splitlines():
+        if not ligne.strip():
+            continue
+        try:
+            issues.append(json.loads(ligne))
+        except json.JSONDecodeError:
+            print("  Fin du fichier de reprise corrompue (arrêt brutal) — ignorée.", file=sys.stderr)
+            break
+    REPRISE_DATA.write_text(
+        "".join(json.dumps(i, ensure_ascii=False) + "\n" for i in issues), encoding="utf-8"
+    )
     start_at = len(issues)
     if start_at:
         print(f"  Reprise à {start_at} billets déjà reçus.", file=sys.stderr)
