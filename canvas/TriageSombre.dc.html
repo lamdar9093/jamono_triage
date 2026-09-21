@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #6E1414; } a:hover { color: #A64B00; }
+    .th {
+      --ground:#FAFAF8; --ground-sunken:#F2F2EE;
+      --ink:#16181A; --ink-muted:#5B6066; --ink-faint:#8A9099; --ink-inverse:#FAFAF8;
+      --rule:#D8D8D2; --rule-strong:#16181A;
+      --sev-p1:#6E1414; --sev-p2:#A64B00; --sev-p3:#5A6470; --sev-p4:#9AA0A6;
+      --sev-p1-wash:#F4E6E5; --sev-p2-wash:#F6EDE3; --sev-p3-wash:#EDEFF1; --sev-p4-wash:#F2F3F4;
+    }
+    .th.sombre {
+      --ground:#141516; --ground-sunken:#0E0F10;
+      --ink:#E8E8E4; --ink-muted:#9AA0A6; --ink-faint:#6B7176; --ink-inverse:#141516;
+      --rule:#2E3134; --rule-strong:#E8E8E4;
+      --sev-p1:#FF6B5E; --sev-p2:#E39A4A; --sev-p3:#8FA3B8; --sev-p4:#6B7280;
+      --sev-p1-wash:#2A1614; --sev-p2-wash:#261B10; --sev-p3-wash:#1A1E22; --sev-p4-wash:#17191B;
+    }
+    .lbl { font: 600 10px/1.1 "IBM Plex Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+    .val { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .prov { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 10px; color: var(--ink-faint); }
+    .r { transition: background 200ms cubic-bezier(.2,0,0,1); }
+    .r:hover { background: var(--ground-sunken); }
+    .act { font: 600 10px/1 "IBM Plex Sans", system-ui, sans-serif; letter-spacing:.08em; text-transform:uppercase; padding:9px 14px; border:1px solid var(--rule-strong); background:transparent; color:var(--ink); border-radius:0; cursor:pointer; transition: background 200ms cubic-bezier(.2,0,0,1), color 200ms cubic-bezier(.2,0,0,1); }
+    .act:hover { background: var(--ink); color: var(--ink-inverse); }
+    .k { font-family:"IBM Plex Mono", ui-monospace, Menlo, monospace; font-size:10px; border:1px solid var(--rule); padding:2px 5px; color:var(--ink-muted); }
+    @media (prefers-reduced-motion: reduce) { * { transition-duration:.01ms !important; animation-duration:.01ms !important; } }
+  </style>
+</helmet>
+<div class="th {{themeClass}}" style="width: 1280px; min-height: 800px; background: var(--ground); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; box-sizing: border-box;">
+
+  <div style="display: flex; align-items: baseline; justify-content: space-between; padding: 18px 24px 12px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-size: 15px; font-weight: 600; letter-spacing: .02em;">TRIAGE</span>
+      <span class="prov">knowledge/severite.md · knowledge/services.md</span>
+    </div>
+    <span class="val" style="font-size: 13px; color: var(--ink-muted);">2026-09-17 &nbsp; 14:22:07 UTC</span>
+  </div>
+
+  <div style="height: 2px; background: var(--rule);">
+    <div style="height: 2px; width: 62%; background: var(--sev-p3);"></div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 2px solid var(--rule-strong);">
+    <div style="padding: 14px 24px 16px; border-right: 1px solid var(--rule);">
+      <div class="lbl">Ouverts</div>
+      <div class="val" style="font-size: 28px; margin-top: 8px;">17</div>
+    </div>
+    <div style="padding: 14px 24px 16px; border-right: 1px solid var(--rule);">
+      <div class="lbl">P1 actifs</div>
+      <div class="val" style="font-size: 28px; margin-top: 8px; color: var(--sev-p1);">2</div>
+    </div>
+    <div style="padding: 14px 24px 16px; border-right: 1px solid var(--rule);">
+      <div class="lbl">MTTA</div>
+      <div class="val" style="font-size: 28px; margin-top: 8px;">04:12</div>
+    </div>
+    <div style="padding: 14px 24px 16px;">
+      <div class="lbl">Écritures / plafond</div>
+      <div class="val" style="font-size: 28px; margin-top: 8px;">12<span style="color: var(--ink-faint);">&thinsp;/&thinsp;40</span></div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; gap: 0; padding: 0 24px 0 27px; border-bottom: 1px solid var(--rule);">
+    <div class="lbl" style="padding: 10px 0;">Sév</div>
+    <div class="lbl" style="padding: 10px 0;">Incident</div>
+    <div class="lbl" style="padding: 10px 0;">Service</div>
+    <div class="lbl" style="padding: 10px 0;">Signal observé</div>
+    <div class="lbl" style="padding: 10px 0; text-align: right;">Durée</div>
+    <div class="lbl" style="padding: 10px 0 10px 16px;">Équipe</div>
+    <div class="lbl" style="padding: 10px 0 10px 16px;">État</div>
+  </div>
+
+  <div class="r" style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; padding: 0 24px 0 24px; border-left: 3px solid var(--sev-p1); background: var(--sev-p1-wash); border-bottom: 1px solid var(--rule);">
+    <div class="val" style="padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--sev-p1);">P1</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">INC-4471</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">PAIEMENT-1</div>
+    <div style="padding: 12px 0; font-size: 13px; color: var(--ink-muted);">taux d'erreur <span class="val" style="font-size: 13px; color: var(--ink);">7,4&thinsp;%</span> sur 5 min — seuil 2,0&thinsp;%</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px; text-align: right;">00:12:31</div>
+    <div class="val" style="padding: 12px 0 12px 16px; font-size: 13px;">EQ-PAIEMENTS</div>
+    <div class="lbl" style="padding: 13px 0 12px 16px;">Non pris</div>
+  </div>
+
+  <div class="r" style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; padding: 0 24px 0 24px; border-left: 3px solid var(--sev-p1); border-bottom: 1px solid var(--rule);">
+    <div class="val" style="padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--sev-p1);">P1</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">INC-4469</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">CORE-2</div>
+    <div style="padding: 12px 0; font-size: 13px; color: var(--ink-muted);">latence p99 <span class="val" style="font-size: 13px; color: var(--ink);">3,2×</span> la référence 7 j</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px; text-align: right;">00:41:02</div>
+    <div class="val" style="padding: 12px 0 12px 16px; font-size: 13px;">EQ-CORE</div>
+    <div class="lbl" style="padding: 13px 0 12px 16px;">En cours</div>
+  </div>
+
+  <div class="r" style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; padding: 0 24px 0 24px; border-left: 3px solid var(--sev-p2); border-bottom: 1px solid var(--rule);">
+    <div class="val" style="padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--sev-p2);">P2</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">INC-4468</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">AUTH-1</div>
+    <div style="padding: 12px 0; font-size: 13px; color: var(--ink-muted);">taux d'erreur <span class="val" style="font-size: 13px; color: var(--ink);">1,2&thinsp;%</span> sur 15 min — impact croissant</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px; text-align: right;">01:07:55</div>
+    <div class="val" style="padding: 12px 0 12px 16px; font-size: 13px;">EQ-IDENTITE</div>
+    <div class="lbl" style="padding: 13px 0 12px 16px;">En cours</div>
+  </div>
+
+  <div class="r" style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; padding: 0 24px 0 24px; border-left: 3px solid var(--sev-p2); border-bottom: 1px solid var(--rule);">
+    <div class="val" style="padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--sev-p2);">P2</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">INC-4465</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">API-GW-1</div>
+    <div style="padding: 12px 0; font-size: 13px; color: var(--ink-muted);">pic de <span class="val" style="font-size: 13px; color: var(--ink);">429</span> — limitation de débit</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px; text-align: right;">02:15:40</div>
+    <div class="val" style="padding: 12px 0 12px 16px; font-size: 13px;">EQ-PLATEFORME</div>
+    <div class="lbl" style="padding: 13px 0 12px 16px;">En cours</div>
+  </div>
+
+  <div class="r" style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; padding: 0 24px 0 24px; border-left: 3px solid var(--sev-p3); border-bottom: 1px solid var(--rule);">
+    <div class="val" style="padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--sev-p3);">P3</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">INC-4462</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">BATCH-3</div>
+    <div style="padding: 12px 0; font-size: 13px; color: var(--ink-muted);">retard <span class="val" style="font-size: 13px; color: var(--ink);">02:14</span> — fenêtre 06:00 non menacée</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px; text-align: right;">03:22:10</div>
+    <div class="val" style="padding: 12px 0 12px 16px; font-size: 13px;">EQ-CORE</div>
+    <div class="lbl" style="padding: 13px 0 12px 16px;">Surveillé</div>
+  </div>
+
+  <div class="r" style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; padding: 0 24px 0 24px; border-left: 3px solid var(--sev-p3); border-bottom: 1px solid var(--rule);">
+    <div class="val" style="padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--sev-p3);">P3</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">INC-4458</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">NOTIF-1</div>
+    <div style="padding: 12px 0; font-size: 13px; color: var(--ink-muted);">file d'attente <span class="val" style="font-size: 13px; color: var(--ink);">12 400</span> — rattrapage en cours</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px; text-align: right;">04:08:19</div>
+    <div class="val" style="padding: 12px 0 12px 16px; font-size: 13px;">EQ-CANAUX</div>
+    <div class="lbl" style="padding: 13px 0 12px 16px;">Surveillé</div>
+  </div>
+
+  <div class="r" style="display: grid; grid-template-columns: 54px 104px 132px 1fr 96px 148px 112px; padding: 0 24px 0 24px; border-left: 3px solid var(--sev-p4); border-bottom: 2px solid var(--rule-strong);">
+    <div class="val" style="padding: 12px 0; font-size: 13px; font-weight: 600; color: var(--sev-p4);">P4</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">INC-4451</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px;">RAPPORT-2</div>
+    <div style="padding: 12px 0; font-size: 13px; color: var(--ink-muted);">échec d'export — échéance à J-6</div>
+    <div class="val" style="padding: 12px 0; font-size: 13px; text-align: right;">18:44:02</div>
+    <div class="val" style="padding: 12px 0 12px 16px; font-size: 13px;">EQ-DONNEES</div>
+    <div class="lbl" style="padding: 13px 0 12px 16px;">Planifié</div>
+  </div>
+
+  <div style="display: flex; gap: 40px; align-items: flex-start; padding: 18px 24px 16px 27px; border-bottom: 1px solid var(--rule);">
+    <div style="flex-grow: 1;">
+      <div class="lbl">Ligne sélectionnée — INC-4471</div>
+      <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 9px;">
+        <span class="val" style="font-size: 18px;">ERR_RATE_SPIKE</span>
+        <span class="lbl" style="color: var(--ink-faint);">motif reconnu</span>
+      </div>
+      <div class="prov" style="margin-top: 6px;">knowledge/patterns/err-rate-spike-paiement.md</div>
+    </div>
+    <div>
+      <div class="lbl">Confiance</div>
+      <div class="val" style="font-size: 18px; margin-top: 9px;">0.87</div>
+    </div>
+    <div>
+      <div class="lbl">Similaires 90 j</div>
+      <div class="val" style="font-size: 18px; margin-top: 9px;">3</div>
+    </div>
+    <div>
+      <div class="lbl">Faux positifs écartés</div>
+      <div class="val" style="font-size: 18px; margin-top: 9px;">2<span style="color: var(--ink-faint);">&thinsp;/&thinsp;2</span></div>
+    </div>
+    <div style="display: flex; gap: 8px; align-self: center;">
+      <button class="act">Ouvrir billet</button>
+      <button class="act">Teams</button>
+      <button class="act">Escalader</button>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 18px; align-items: center; padding: 14px 24px 22px 27px;">
+    <span class="lbl" style="color: var(--ink-faint);">Raccourcis</span>
+    <span style="display: flex; gap: 7px; align-items: center;"><span class="k">&crarr;</span><span class="lbl">Ouvrir</span></span>
+    <span style="display: flex; gap: 7px; align-items: center;"><span class="k">T</span><span class="lbl">Teams</span></span>
+    <span style="display: flex; gap: 7px; align-items: center;"><span class="k">E</span><span class="lbl">Escalader</span></span>
+    <span style="display: flex; gap: 7px; align-items: center;"><span class="k">J</span><span class="k">K</span><span class="lbl">Naviguer</span></span>
+    <span style="flex-grow: 1;"></span>
+    <span class="prov">écriture en dry-run — aucune modification réelle</span>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"sombre","section":"Affichage"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: (this.props.theme ?? 'clair') === 'sombre' ? 'sombre' : '' };
+  }
+}
+</script>
+</body>
+</html>

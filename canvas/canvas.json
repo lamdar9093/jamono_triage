@@ -1,0 +1,33 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",          "x": 0,    "y": 0,    "w": 1280, "h": 800,  "title": "Triage N1 / SRE — clair" },
+    { "file": "TriageSombre.dc.html",  "x": 1360, "y": 0,    "w": 1280, "h": 800,  "title": "Triage N1 / SRE — sombre" },
+    { "file": "Justification.dc.html", "x": 0,    "y": 920,  "w": 780,  "h": 1060, "title": "Panneau de justification" },
+    { "file": "DryRun.dc.html",        "x": 860,  "y": 920,  "w": 940,  "h": 880,  "title": "Diff dry-run" },
+    { "file": "Situation.dc.html",     "x": 0,    "y": 2100, "w": 1180, "h": 740,  "title": "Tableau de situation — direction" },
+    { "file": "ImpactMetier.dc.html",  "x": 1260, "y": 2100, "w": 840,  "h": 700,  "title": "Impact métier" }
+  ],
+  "annotations": [
+    {
+      "id": "direction",
+      "x": -380, "y": 0, "w": 300,
+      "text": "DIRECTION « INSTRUMENTATION »\n\nRams, Vignelli, Aicher — appareil de mesure.\n\nRègles dures appliquées ici :\n· rayon 0, aucune ombre\n· hiérarchie par poids de filet (1px / 2px)\n· tous les chiffres en mono, chasse tabulaire\n· la sévérité est la seule couleur\n· étiquettes en petites capitales\n\nTokens exacts : design/tokens.css\nRègles : design/charte.md"
+    },
+    {
+      "id": "justification",
+      "x": -380, "y": 920, "w": 300,
+      "text": "LE COMPOSANT CENTRAL\n\nLe panneau de justification est partagé par les quatre populations — seul son rendu change.\n\nChaque valeur porte sa provenance. « Ce qui manque pour trancher » est délibérément affiché : c'est ce qui empêche une hypothèse de devenir une cause racine par répétition.\n\nLe contrat de skill est montré à l'écran, parce que c'est lui la frontière de sécurité — pas le prompt."
+    },
+    {
+      "id": "dryrun",
+      "x": 1860, "y": 920, "w": 300,
+      "text": "DRY-RUN\n\nInterrupteur permanent, pas une phase de projet.\n\nDiff typographique à la git : ce que la skill écrirait, sans écrire. Le compteur d'écritures montre le plafond horaire — le blast radius rendu visible.\n\nC'est l'écran qui gagne la revue sécurité."
+    },
+    {
+      "id": "non-techniques",
+      "x": -380, "y": 2100, "w": 300,
+      "text": "LES DEUX VUES NON TECHNIQUES\n\nMêmes données, deux rendus.\n\nDirection : état, impact, délai, communication. Densité conservée.\n\nMétier : prose, aucun identifiant de service, type plus grand. « Ce qui n'est pas touché » compte autant que ce qui l'est — c'est ce qui coupe les appels au service client."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

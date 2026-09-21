@@ -1,0 +1,23 @@
+# Données réelles — ne quittent jamais la machine
+/data/
+/rapports/*.md
+!/rapports/README.md
+/lots/*.md
+/lots/sorties/
+/lots/verite-terrain.json
+/evals/cas/*.md
+!/evals/cas/_gabarit.md
+/evals/resultats.md
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# OS
+.DS_Store

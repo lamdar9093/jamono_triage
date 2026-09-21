@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <style>
+    body { margin: 0; }
+    a { color: #6E1414; } a:hover { color: #A64B00; }
+    .th {
+      --ground:#FAFAF8; --ground-sunken:#F2F2EE;
+      --ink:#16181A; --ink-muted:#5B6066; --ink-faint:#8A9099; --ink-inverse:#FAFAF8;
+      --rule:#D8D8D2; --rule-strong:#16181A;
+      --sev-p1:#6E1414; --sev-p1-wash:#F4E6E5; --ok:#1F4D2B;
+    }
+    .th.sombre {
+      --ground:#141516; --ground-sunken:#0E0F10;
+      --ink:#E8E8E4; --ink-muted:#9AA0A6; --ink-faint:#6B7176; --ink-inverse:#141516;
+      --rule:#2E3134; --rule-strong:#E8E8E4;
+      --sev-p1:#FF6B5E; --sev-p1-wash:#2A1614; --ok:#6FCF8A;
+    }
+    .lbl { font: 600 10px/1.1 "IBM Plex Sans", system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-muted); }
+    .val { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .prov { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 10px; color: var(--ink-faint); }
+    .sec { padding: 22px 32px; border-bottom: 1px solid var(--rule); }
+    .act { font: 600 10px/1 "IBM Plex Sans", system-ui, sans-serif; letter-spacing:.08em; text-transform:uppercase; padding:10px 16px; border:1px solid var(--rule-strong); background:transparent; color:var(--ink); border-radius:0; cursor:pointer; transition: background 200ms cubic-bezier(.2,0,0,1), color 200ms cubic-bezier(.2,0,0,1); }
+    .act:hover { background: var(--ink); color: var(--ink-inverse); }
+    p { margin: 0; font-size: 15px; line-height: 1.5; }
+    @media (prefers-reduced-motion: reduce) { * { transition-duration:.01ms !important; animation-duration:.01ms !important; } }
+  </style>
+</helmet>
+<div class="th {{themeClass}}" style="width: 840px; min-height: 700px; background: var(--ground); color: var(--ink); font-family: 'IBM Plex Sans', system-ui, sans-serif; box-sizing: border-box; border-left: 3px solid var(--sev-p1);">
+
+  <div style="padding: 24px 32px 20px; border-bottom: 2px solid var(--rule-strong); background: var(--sev-p1-wash);">
+    <div class="lbl">Incident en cours — mise à jour 14:22</div>
+    <div style="font-size: 21px; font-weight: 600; margin-top: 12px; line-height: 1.3;">Les paiements par carte échouent par intermittence</div>
+    <div style="display: flex; gap: 32px; margin-top: 16px;">
+      <span><span class="lbl">Depuis</span> <span class="val" style="font-size: 15px; margin-left: 9px;">14:09</span></span>
+      <span><span class="lbl">Durée</span> <span class="val" style="font-size: 15px; margin-left: 9px;">13 min</span></span>
+      <span><span class="lbl">Gravité</span> <span class="val" style="font-size: 15px; margin-left: 9px; color: var(--sev-p1);">Critique</span></span>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="lbl">Ce que vos clients constatent</div>
+    <p style="margin-top: 13px;">Environ <span style="font-weight: 600;">7 paiements sur 100</span> sont refusés au moment de la transaction. Le client voit un message d'échec et peut réessayer — la plupart des secondes tentatives aboutissent.</p>
+    <p style="margin-top: 12px; color: var(--ink-muted);">Aucun montant n'est débité lors d'un échec. Aucune donnée client n'est en cause.</p>
+  </div>
+
+  <div class="sec">
+    <div class="lbl">Ce qui n'est pas touché</div>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 13px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.5"><path d="M3 8.5 L6.5 12 L13 4.5"/></svg>
+        <span style="font-size: 15px;">Consultation des comptes et des soldes</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.5"><path d="M3 8.5 L6.5 12 L13 4.5"/></svg>
+        <span style="font-size: 15px;">Virements et transferts entre comptes</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--ok)" stroke-width="1.5"><path d="M3 8.5 L6.5 12 L13 4.5"/></svg>
+        <span style="font-size: 15px;">Application mobile et site web</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="lbl">Ce que nous faisons</div>
+    <p style="margin-top: 13px;">Le problème est identifié et localisé sur une seule zone technique. La même situation s'est produite trois fois depuis mars, et a été résolue à chaque fois par une bascule vers une zone de secours — en moyenne en moins de cinq minutes.</p>
+    <p style="margin-top: 12px; color: var(--ink-muted);">Les dernières vérifications sont en cours avant de déclencher cette bascule.</p>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 32px; padding: 22px 32px;">
+    <div>
+      <div class="lbl">Prochaine nouvelle</div>
+      <div class="val" style="font-size: 28px; margin-top: 9px;">14:52</div>
+    </div>
+    <div style="border-left: 1px solid var(--rule); padding-left: 32px;">
+      <div class="lbl">Interlocuteur</div>
+      <div style="font-size: 15px; margin-top: 11px;">Responsable d'astreinte — canal Incidents</div>
+    </div>
+    <span style="flex-grow: 1;"></span>
+    <button class="act">Recevoir les mises à jour</button>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"clair","section":"Affichage"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { themeClass: (this.props.theme ?? 'clair') === 'sombre' ? 'sombre' : '' };
+  }
+}
+</script>
+</body>
+</html>
