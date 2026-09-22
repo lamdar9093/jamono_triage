@@ -47,6 +47,18 @@ def charger_billets() -> list:
     fichier = fichier_anon if fichier_anon.exists() else fichier_brut
     if not fichier.exists():
         sys.exit("Aucune donnée trouvée — lance d'abord extraire.py (et anonymiser.py).")
+
+    # Un billets-anon.json plus vieux que billets.json vient d'une extraction
+    # précédente : il lui manque les champs ajoutés depuis, et l'analyse sort
+    # silencieusement des zéros. On refuse plutôt que de produire un faux rapport.
+    if fichier is fichier_anon and fichier_brut.exists():
+        if fichier_anon.stat().st_mtime < fichier_brut.stat().st_mtime:
+            sys.exit(
+                "billets-anon.json est plus ancien que billets.json — il date d'une\n"
+                "extraction précédente et n'a pas les champs récents.\n"
+                "Relance : python scripts/anonymiser.py"
+            )
+
     print(f"Lecture de {fichier.name}", file=sys.stderr)
     return json.loads(fichier.read_text(encoding="utf-8"))["issues"]
 
