@@ -203,7 +203,9 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
   1. **One Portail** : ouverts par l'équipe business pour un client. Marqueurs : label `automatedcreation`, Request type renseigné (« J'ai besoin d'aide »), Customer status (« Triage »).
   2. **Directs** : quelqu'un reçoit un mail ou un chat Teams et crée le billet dans le board. Marqueurs : pas de label, « No request type », Epic Link renseigné.
   3. **Tâches doublons** : quelqu'un recrée dans PECARTES une tâche pour un billet support. Difficiles à repérer automatiquement.
-- **La liste triage = les billets avec le label `automatedcreation`.** Le rapport et les évaluations du plan portent sur ce sous-ensemble, pas sur les 25 928.
+- **Décision de périmètre (2026-09-21) : l'étape 1 porte sur tous les billets qui arrivent par One Portail**, avec ou sans le label `automatedcreation`, parce que c'est le périmètre métier. Le tableau de bord « Powercard Support » en montre **670** ; le label n'en marque que 195, c'est donc un sous-groupe (la file Triage) et non le critère de périmètre.
+- Critère technique retenu : un billet One Portail a un **Request type** renseigné (« J'ai besoin d'aide »), là où un billet créé au board affiche « No request type ». Champ à confirmer avec `scripts/champs.py`.
+- Chiffres du plan ci-dessus (554 billets, 407 fermés) : instantané plus ancien. Au 2026-09-21 le tableau de bord affiche 670 billets, 422 fermés — le stock grossit, ce qui confirme le décrochage créés/résolus.
 - Le type de billet (`Support Request`) ne distingue pas les origines.
 
 ## Étape 1 — Semaine 1 (le rapport)
@@ -211,10 +213,12 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - [x] Jeton Jira lecture seule
 - [x] `scripts/extraire.py` : extraction complète, incrémentale (`updated >=`), reprise sur coupure, nouvelles tentatives sur timeout. **Fait le 2026-09-21 : 25 928 billets dans `data/billets.json`** (sur la machine de travail, pas dans le dépôt).
 - [x] Vérification de reproductibilité : relance juste après = 6 billets mis à jour, 0 doublon.
-- [ ] Confirmer le nombre de billets avec `automatedcreation` (le vrai périmètre de l'étape 1)
-- [ ] Confirmer le champ External issue ID (`customfield_XXXXX`) et l'ajouter à `FIELDS` dans `extraire.py`
-- [ ] `scripts/anonymiser.py` → `data/billets-anon.json`
-- [ ] `scripts/analyser.py` : adapter pour segmenter par origine (`automatedcreation` ou non) → `rapports/donnees-actuelles.md`
+- [x] Comptage `automatedcreation` : 195 sur 25 928. Insuffisant comme périmètre (voir décision ci-dessus).
+- [x] `scripts/anonymiser.py` → `data/billets-anon.json`
+- [x] `scripts/analyser.py` : segmente par origine, options `--directs` et `--tous`. Premier rapport produit sur les 195 — à refaire sur le bon périmètre.
+- [ ] `scripts/champs.py` : trouver les `customfield_XXXXX` de Request type, Application Card, External issue ID
+- [ ] Les ajouter à `FIELDS` dans `extraire.py`, puis **une extraction complète** (`--complet`) : l'incrémental ne rattrape pas les champs manquants sur les billets anciens
+- [ ] Rebasculer `analyser.py` sur le critère Request type, et vérifier qu'on retrouve ~670 billets
 - [ ] Rapport présentable en fin de semaine (livrable 1), sans IA
 
 ## Étapes suivantes
