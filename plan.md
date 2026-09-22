@@ -233,6 +233,14 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - **Prochaine commande concrète pour démarrer la taxonomie** : `python scripts/lots.py --n 200 --taille 20 --sortie lots/taxonomie` — génère ~10 fichiers markdown à lire dans VS Code pour commencer le regroupement manuel en catégories (`knowledge/categories.md`).
 - [x] Bug corrigé (2026-09-22) : `lots.py` avait sa propre copie de `STATUTS_FERMES`, sans `Rejected` — désynchronisée de celle d'`analyser.py`. Même garde-fou anti-fichier-périmé ajouté que dans `analyser.py`.
 
+## Étape 1 — Semaine 2 (taxonomie)
+
+- [x] **Lecture complète des 200 billets (10 lots) faite le 2026-09-22**, sur la machine de travail. `knowledge/categories.md` réécrit à partir des résultats : `abend-traitement` (plantage batch mainframe) identifiée comme la plus grosse famille, absente du brouillon initial ; `donnees-manquantes` scindée en `fichier-non-reçu` / `rapport-errone` ; `acces-auth` recadrée en `acces-habilitation` (gestion d'accès interne, pas authentification porteur) ; nouvelles : `tache-recurrente`, `decommissionnement`, `bris-confidentialite` (rare, fort enjeu), `saas`, `loyaute-points` ; `bruit-test` identifiée comme un filtre à appliquer, pas une catégorie. Détail complet dans `knowledge/categories.md`.
+- [ ] **À corriger** : ce premier écrit du fichier vient d'une transcription de captures d'écran (photos de la machine de travail), donc les numéros de billets et citations peuvent contenir des erreurs — à relire contre le texte original sur la machine de travail, pas à prendre à la lettre.
+- [ ] Trancher `changement-implementation` / `conformite-validation` (ambigu dans les notes transcrites)
+- [ ] Vérifier si `bruit-test` fausse aussi `rapports/donnees-actuelles.md` (livrable 1)
+- [ ] 120 cas de vérité terrain (livrable 3) — pas commencé. Question ouverte : `lots.py` par défaut tire sur tout l'historique fermé (large), alors que le périmètre mesuré (livrable 1, référence actuelle) est le label One Portail seul (~98 fermés, insuffisant pour 120) — à trancher avant de lancer l'échantillon d'évaluation.
+
 ## Étapes suivantes
 
 Semaine 2 (taxonomie et evals), semaine 3 (skills et mesure), semaine 4 (démo) : voir la « Séquence » ci-dessus. Pas commencées.
