@@ -51,15 +51,17 @@ REESSAIS_MAX = 5
 MARGE_MINUTES = 10
 
 # Champs demandés à l'API. Le label "automatedcreation" (présent dans "labels")
-# marque les billets ouverts via OnePortail, c'est-à-dire la liste triage.
-# Le champ "External issue ID" est un champ personnalisé Jira
-# (customfield_XXXXX) — à confirmer sur ton instance
-# (Paramètres > Champs personnalisés) et à ajouter ici une fois connu.
+# marque la file Triage, un sous-groupe des billets OnePortail. Le critère de
+# périmètre OnePortail est le Customer Request Type renseigné (voir plan.md).
+# Les customfield_* viennent de scripts/champs.py sur cette instance Jira.
 FIELDS = [
     "summary", "description", "issuetype", "priority", "status",
     "assignee", "reporter", "created", "updated", "resolutiondate",
     "labels", "components",
-    # "customfield_XXXXX",  # External issue ID — décommenter une fois confirmé
+    "customfield_11200",  # Customer Request Type — renseigné = billet One Portail
+    "customfield_12447",  # Type de demande — à comparer au précédent sur les données
+    "customfield_37502",  # Application Card (ex. Powercard)
+    "customfield_17800",  # External issue ID (lien fournisseur, N1PSC-*)
 ]
 
 

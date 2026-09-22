@@ -216,8 +216,9 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - [x] Comptage `automatedcreation` : 195 sur 25 928. Insuffisant comme périmètre (voir décision ci-dessus).
 - [x] `scripts/anonymiser.py` → `data/billets-anon.json`
 - [x] `scripts/analyser.py` : segmente par origine, options `--directs` et `--tous`. Premier rapport produit sur les 195 — à refaire sur le bon périmètre.
-- [ ] `scripts/champs.py` : trouver les `customfield_XXXXX` de Request type, Application Card, External issue ID
-- [ ] Les ajouter à `FIELDS` dans `extraire.py`, puis **une extraction complète** (`--complet`) : l'incrémental ne rattrape pas les champs manquants sur les billets anciens
+- [x] `scripts/champs.py` : Customer Request Type = `customfield_11200`, Application Card = `customfield_37502`, External issue ID = `customfield_17800`, Type de demande = `customfield_12447` (rôle à confirmer)
+- [x] Ajoutés à `FIELDS` dans `extraire.py` (et `CHAMP_EXTERNAL_ID` dans `analyser.py`)
+- [ ] **Extraction complète** (`--complet`) : l'incrémental ne rattrape pas les champs manquants sur les billets anciens
 - [ ] Rebasculer `analyser.py` sur le critère Request type, et vérifier qu'on retrouve ~670 billets
 - [ ] Rapport présentable en fin de semaine (livrable 1), sans IA
 

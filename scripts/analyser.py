@@ -33,7 +33,7 @@ LABEL_ONEPORTAIL = "automatedcreation"
 
 # Nom du champ personnalisé "External issue ID" — à confirmer dans Jira
 # et à faire correspondre à FIELDS dans extraire.py.
-CHAMP_EXTERNAL_ID = "customfield_external_issue_id"  # placeholder, à corriger
+CHAMP_EXTERNAL_ID = "customfield_17800"
 
 
 def charger_billets() -> list:
