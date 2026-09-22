@@ -241,6 +241,13 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - [ ] Vérifier si `bruit-test` fausse aussi `rapports/donnees-actuelles.md` (livrable 1)
 - [ ] 120 cas de vérité terrain (livrable 3) — pas commencé. Question ouverte : `lots.py` par défaut tire sur tout l'historique fermé (large), alors que le périmètre mesuré (livrable 1, référence actuelle) est le label One Portail seul (~98 fermés, insuffisant pour 120) — à trancher avant de lancer l'échantillon d'évaluation.
 
+## Étape 1 — Semaine 2-3 (skills et mesure)
+
+- [x] **Livrable 4 (les 4 fichiers Copilot) déjà existant et vérifié bon (2026-09-22)** : `.github/copilot-instructions.md`, `.github/prompts/{trier-billet,trier-lot,completude}.prompt.md`. Minces, aucune connaissance métier dedans, pointent vers `knowledge/` — passent le test de survie du plan. Rien à changer.
+- [x] **`scorer.py` (livrable 5) vérifié end-to-end sur données synthétiques (2026-09-22)** : le parseur capture correctement les 11 champs réels du bloc de sortie de `trier-lot.prompt.md` (le docstring n'en montrait que 7, corrigé — dérive de documentation, pas un bug fonctionnel). La chaîne prompt → sortie → `scorer.py` → `evals/resultats.md` fonctionne.
+- [ ] **Limite connue de `scorer.py`, pas corrigée maintenant** : `noter()` ne distingue pas encore « Copilot seul » de « Copilot + taxonomie » comme deux colonnes séparées — juste un score global. Le plan demande les deux séparément (livrable 5). À concevoir quand on aura une vraie première passe (comment faire tourner le prompt sans accès à `knowledge/categories.md` pour la comparaison ?) — pas avant.
+- [ ] **Pas encore fait : l'utiliser pour de vrai.** Ouvrir un billet réel dans VS Code, lancer `trier-billet.prompt.md`, voir ce que Copilot propose. C'est informel (pas encore le vrai jeu d'évaluation à 120), mais c'est le premier vrai test de bout en bout, et ça ne demande rien de plus que ce qui existe déjà.
+
 ## Étapes suivantes
 
 Semaine 2 (taxonomie et evals), semaine 3 (skills et mesure), semaine 4 (démo) : voir la « Séquence » ci-dessus. Pas commencées.

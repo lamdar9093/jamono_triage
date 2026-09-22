@@ -6,7 +6,10 @@ Lit lots/sorties/*.md (les réponses Copilot collées après chaque lot) et
 lots/verite-terrain.json, écrit evals/resultats.md avec les chiffres
 datés.
 
-Format de sortie attendu par billet (voir .github/prompts/trier-lot.prompt.md) :
+Format de sortie attendu par billet — voir .github/prompts/trier-lot.prompt.md
+pour la liste exacte des champs, qui fait foi (l'exemple ci-dessous est
+volontairement partiel ; le parseur capture n'importe quel champ CLÉ: valeur,
+pas seulement ceux listés ici) :
 
     ### PECARTES-12345
     CATEGORIE: refus-transaction
