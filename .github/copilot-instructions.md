@@ -11,6 +11,11 @@ lire la couche connaissance — jamais l'inverse.
 - `knowledge/services.md`, `knowledge/escalade.md` — contexte des
   services et des délais.
 - `knowledge/patterns/` — motifs d'incidents déjà rencontrés.
+- `data/personnes.md`, **s'il existe** — qui a résolu quoi par catégorie,
+  généré par `scripts/suggestions.py`. Seule source pour `PERSONNE_SUGGEREE`
+  / `PERSONNE_PREUVE`. Local, jamais versionné (contient de vrais noms) —
+  absent sur une machine où le script n'a pas encore tourné ; dans ce cas,
+  `PERSONNE_SUGGEREE: aucune donnée suffisante`, pas une déduction.
 
 ## Ce que « consulter la connaissance » veut dire
 

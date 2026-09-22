@@ -16,7 +16,7 @@ CATEGORIE: <slug depuis knowledge/categories.md, ou "aucune-correspondance">
 PRIORITE: <niveau depuis knowledge/severite.md>
 PRIORITE_CRITERE: <une phrase — le critère observable qui justifie ce niveau>
 EQUIPE: <identifiant d'équipe depuis knowledge/services.md, ou "aucune donnée suffisante">
-PERSONNE_SUGGEREE: <nom si l'historique le permet, sinon "aucune donnée suffisante">
+PERSONNE_SUGGEREE: <nom depuis data/personnes.md pour cette catégorie, ou "aucune donnée suffisante" si le fichier n'existe pas ou n'a rien pour cette catégorie>
 PERSONNE_PREUVE: <ex: "a résolu 14/22 derniers billets de cette catégorie">
 COMPLETUDE: <complet|incomplet>
 COMPLETUDE_MANQUE: <champs manquants séparés par ";", ou "aucun">
