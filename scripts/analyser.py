@@ -34,7 +34,9 @@ STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved"}
 # sous-groupe (la file Triage, 195 billets sur 959) : il ne suffit pas seul.
 CHAMP_REQUEST_TYPE = "customfield_11200"  # Customer Request Type
 LANCEMENT_ONEPORTAIL = "2026-06-11"  # date du billet automatedcreation le plus ancien
-LABEL_TRIAGE = "automatedcreation"  # sous-groupe affiché dans la file Triage
+LABEL_AUTOMATEDCREATION = "automatedcreation"  # posé à la création, reste ensuite
+# quel que soit le statut du billet — ce n'est PAS le statut de flux "Triage"
+# (2 billets en ce moment sur le tableau de bord), qui est une étape passagère.
 
 CHAMP_EXTERNAL_ID = "customfield_17800"  # External issue ID
 
@@ -368,18 +370,18 @@ def _est_oneportail(issue) -> bool:
     return bool(f.get(CHAMP_REQUEST_TYPE)) and (f.get("created") or "") >= LANCEMENT_ONEPORTAIL
 
 
-def _est_triage(issue) -> bool:
-    return LABEL_TRIAGE in (issue["fields"].get("labels") or [])
+def _a_label_automatedcreation(issue) -> bool:
+    return LABEL_AUTOMATEDCREATION in (issue["fields"].get("labels") or [])
 
 
 def main() -> None:
     tous = charger_billets()
     oneportail = [i for i in tous if _est_oneportail(i)]
     directs = [i for i in tous if not _est_oneportail(i)]
-    en_triage = sum(1 for i in oneportail if _est_triage(i))
+    avec_label = sum(1 for i in oneportail if _a_label_automatedcreation(i))
     print(f"Répartition : {len(tous)} billets = {len(oneportail)} One Portail "
-          f"(Request Type + depuis {LANCEMENT_ONEPORTAIL}, dont {en_triage} en file Triage) "
-          f"+ {len(directs)} autres", file=sys.stderr)
+          f"(Request Type + depuis {LANCEMENT_ONEPORTAIL}, dont {avec_label} avec le label "
+          f"automatedcreation) + {len(directs)} autres", file=sys.stderr)
 
     # Le périmètre de l'étape 1 (plan.md) est la liste triage, donc One Portail.
     if "--tous" in sys.argv:
