@@ -34,3 +34,5 @@ Règles strictes :
   choisir le niveau le plus prudent et l'écrire dans `PRIORITE_CRITERE`.
 - Aucun texte avant le premier bloc, aucun texte après le dernier — la
   sortie est lue par `scripts/scorer.py`, pas relue à l'œil.
+- Ne propose jamais d'écrire dans Jira, de fermer, ni de réaffecter un
+  billet — ce prompt propose, il n'agit pas.
