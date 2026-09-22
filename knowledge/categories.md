@@ -122,13 +122,19 @@ catégorie.**
   avec les autres catégories — voir `knowledge/severite.md` (accès non
   autorisé confirmé = critère P1).
 
-## saas
+## saas — retirée, ce n'était pas une catégorie
 
-**Nouvelle — famille montante.**
+**Erreur corrigée (2026-09-22).** Les billets « Brim / PowerCard » repérés
+lors de la lecture des 200 billets n'étaient pas un type de problème — ils
+avaient en commun l'**équipe** qui les traite (`SaaS - PE Cartes`),
+confirmé par l'utilisateur et par le vrai champ Jira `Team`
+(`customfield_11600`, ajouté à `extraire.py`). Un billet Powercard peut
+être n'importe quelle catégorie ci-dessus (`refus-transaction`,
+`abend-traitement`, ...) — le classer à part sous « saas » aurait caché
+son vrai type de problème.
 
-- **Signature observable** : billets liés aux produits Brim / PowerCard.
-- **À surveiller** : catégorie en croissance, à revisiter au prochain
-  passage sur des données plus récentes.
+L'équipe se lit maintenant directement depuis `data/personnes.md`
+(généré par `scripts/suggestions.py`), pas devinée par mot-clé.
 
 ## loyaute-points
 

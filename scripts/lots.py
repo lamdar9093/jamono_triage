@@ -28,7 +28,9 @@ from pathlib import Path
 from analyser import (
     MIGRATION,
     STATUTS_FERMES,
+    CHAMP_TEAM,
     FENETRE_MOIS_DEFAUT,
+    valeur_champ,
     _borne_fenetre,
 )
 
@@ -109,9 +111,7 @@ def ecrire_lots(selection: list, taille: int, sortie: Path) -> None:
             verite_terrain[it["key"]] = {
                 "priorite_finale": (f.get("priority") or {}).get("name", "?"),
                 "labels": f.get("labels") or [],
-                # L'équipe résolutrice réelle doit venir de l'assignation
-                # finale (via changelog), pas de la première — à compléter
-                # une fois la taxonomie d'équipes stabilisée.
+                "equipe_finale": valeur_champ(f.get(CHAMP_TEAM)),
             }
 
         chemin = sortie / f"lot-{numero:02d}.md"

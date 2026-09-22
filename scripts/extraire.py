@@ -62,6 +62,10 @@ FIELDS = [
     "customfield_12447",  # Type de demande — à comparer au précédent sur les données
     "customfield_37502",  # Application Card (ex. Powercard)
     "customfield_17800",  # External issue ID (lien fournisseur, N1PSC-*)
+    "customfield_11600",  # Team — vrai champ équipe (SAAS - PE Cartes, Suricates,
+                           # ...), confirmé rempli sur 49/50 billets récents. Seul
+                           # champ utile parmi 17 candidats "équipe" trouvés par
+                           # champs.py — les 16 autres sont vides (Tempo, legacy).
 ]
 
 

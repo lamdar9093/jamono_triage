@@ -14,7 +14,7 @@ pas seulement ceux listés ici) :
     ### PECARTES-12345
     CATEGORIE: refus-transaction
     PRIORITE: 2
-    EQUIPE: EQ-CARTES
+    EQUIPE: SAAS - PE Cartes
     COMPLETUDE: incomplet
     COMPLETUDE_MANQUE: numero_transaction; horodatage
     DEJA_VU: aucun
@@ -82,7 +82,7 @@ def charger_verite() -> dict:
 
 
 def noter(propositions: dict, verite: dict) -> dict:
-    n = bon_priorite = completude_formee = 0
+    n = bon_priorite = completude_formee = bon_equipe = n_equipe_verifiable = 0
 
     for cle, verite_billet in verite.items():
         prop = propositions.get(cle)
@@ -94,16 +94,29 @@ def noter(propositions: dict, verite: dict) -> dict:
         if prop.get("COMPLETUDE") in ("complet", "incomplet"):
             completude_formee += 1
 
-    pct = lambda x: round(100 * x / n, 1) if n else 0.0
+        # equipe_finale absente pour certains billets (champ Team pas toujours
+        # rempli) — ceux-là ne comptent ni pour ni contre, plutôt que de fausser
+        # le taux avec des billets où la vraie réponse n'est pas connue.
+        equipe_reelle = verite_billet.get("equipe_finale")
+        if equipe_reelle:
+            n_equipe_verifiable += 1
+            if prop.get("EQUIPE", "").strip().lower() == equipe_reelle.strip().lower():
+                bon_equipe += 1
+
+    pct = lambda x, total=n: round(100 * x / total, 1) if total else 0.0
     return {
         "n_note": n,
         "n_total_verite": len(verite),
         "priorite_pct": pct(bon_priorite),
         "completude_formee_pct": pct(completude_formee),
-        # CATEGORIE et EQUIPE ne peuvent être notées automatiquement que si
-        # knowledge/categories.md et la vérité terrain partagent le même
-        # vocabulaire — comparaison manuelle tant que la taxonomie n'est
-        # pas figée (livrable 2).
+        "equipe_pct": pct(bon_equipe, n_equipe_verifiable),
+        "n_equipe_verifiable": n_equipe_verifiable,
+        # CATEGORIE reste non notée automatiquement : knowledge/categories.md
+        # et la vérité terrain n'ont pas de vocabulaire garanti commun tant
+        # que la taxonomie n'est pas figée (livrable 2) — comparaison
+        # manuelle pour l'instant. EQUIPE, elle, compare contre un vrai
+        # champ Jira (Team) depuis que ce champ a été identifié — plus
+        # besoin d'attendre la taxonomie pour ce champ-là.
     }
 
 
@@ -115,8 +128,12 @@ def main() -> None:
     EVALS_DIR.mkdir(exist_ok=True)
     out = EVALS_DIR / "resultats.md"
     horodatage = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    ligne = f"| {horodatage} | {score['n_note']}/{score['n_total_verite']} | {score['priorite_pct']} % | {score['completude_formee_pct']} % |\n"
-    entete = "# Résultats d'évaluation\n\n| Date | Billets notés | Priorité correcte | Complétude renseignée |\n|---|---|---|---|\n"
+    equipe_col = f"{score['equipe_pct']} % (sur {score['n_equipe_verifiable']})"
+    ligne = (f"| {horodatage} | {score['n_note']}/{score['n_total_verite']} | "
+             f"{score['priorite_pct']} % | {equipe_col} | {score['completude_formee_pct']} % |\n")
+    entete = ("# Résultats d'évaluation\n\n"
+              "| Date | Billets notés | Priorité correcte | Équipe correcte | Complétude renseignée |\n"
+              "|---|---|---|---|---|\n")
 
     if out.exists() and "| Date |" in out.read_text(encoding="utf-8"):
         out.write_text(out.read_text(encoding="utf-8") + ligne, encoding="utf-8")

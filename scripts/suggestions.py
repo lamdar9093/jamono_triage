@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """
-suggestions.py — Qui a résolu quoi, par catégorie (source de PERSONNE_SUGGEREE)
+suggestions.py — Qui résout quoi, et quelle équipe, par catégorie
 
-Catégorise les billets fermés par recherche de mots-clés (les "Signaux /
-codes reconnus" déjà écrits dans knowledge/categories.md), sans appel à
-Copilot — impossible d'en passer des milliers un par un manuellement (le
-plan limite l'usage manuel de Copilot à ~120 billets). Moins précis qu'une
-vraie lecture, mais transparent : chaque catégorie devinée est traçable au
-mot-clé qui l'a déclenchée, et rien n'est deviné pour les catégories qui
-n'ont pas encore de signal écrit dans categories.md — ces billets restent
-"aucune-correspondance" plutôt que d'inventer un rattachement.
+Deux sources différentes pour deux besoins différents :
+- PERSONNE_SUGGEREE : rien dans Jira ne donne directement "qui devrait
+  traiter ce type de billet" — reconstruit en catégorisant les billets
+  fermés par mots-clés (les "Signaux / codes reconnus" déjà écrits dans
+  knowledge/categories.md), sans appel à Copilot. Impossible d'en passer
+  des milliers un par un manuellement (le plan limite l'usage manuel de
+  Copilot à ~120 billets). Moins précis qu'une vraie lecture, mais
+  transparent : chaque catégorie devinée est traçable au mot-clé qui l'a
+  déclenchée, et rien n'est deviné pour les catégories qui n'ont pas
+  encore de signal écrit dans categories.md.
+- EQUIPE : un vrai champ Jira (Team, customfield_11600) le donne
+  directement — pas besoin de deviner. "saas" avait été mis à tort dans
+  CATEGORIE_SIGNAUX (une équipe, "SaaS - PE Cartes", prise pour un type
+  de problème) avant que ce champ soit identifié ; retiré depuis.
 
 Écrit data/personnes.md — JAMAIS knowledge/, parce que ce fichier contient
 de vrais noms liés à des volumes individuels. data/ ne quitte jamais la
@@ -27,7 +33,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from analyser import STATUTS_FERMES, FENETRE_MOIS_DEFAUT, _borne_fenetre, a_ete_reouvert  # noqa: E402
+from analyser import (  # noqa: E402
+    STATUTS_FERMES, CHAMP_TEAM, FENETRE_MOIS_DEFAUT,
+    valeur_champ, _borne_fenetre, a_ete_reouvert,
+)
 from lots import SEUIL_BRUIT_TEST  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,7 +56,6 @@ CATEGORIE_SIGNAUX = {
     "fichier-non-reçu": ["sgci", "mft", "ctrl-m", "non reçu", "participant file"],
     "acces-habilitation": ["réinitialiser", "débloquer", "logon"],
     "tache-recurrente": ["récurrent :", "récurrent:"],
-    "saas": ["brim", "powercard", "pwc"],
     "limite-solde": ["limite temporaire", "plafond atteint"],
 }
 
@@ -87,12 +95,23 @@ def charger_fermes(depuis: str) -> list:
 
 
 def calculer(fermes: list) -> dict:
-    par_categorie = defaultdict(Counter)
+    par_categorie = defaultdict(Counter)  # catégorie -> {personne: n}
+    equipes_categorie = defaultdict(Counter)  # catégorie -> {équipe: n}
     repartition = Counter()
     reouverts_exclus = 0
     for it in fermes:
         cat = deviner_categorie(it)
         repartition[cat] += 1
+
+        # L'équipe vient d'un vrai champ Jira, pas d'un mot-clé deviné — pas
+        # besoin d'attendre une catégorie non-ambiguë pour la compter. Un
+        # billet rouvert n'a toujours pas été correctement traité, donc pas
+        # crédité non plus ici (même règle que pour la personne).
+        if not cat.startswith("ambigu:") and cat != "aucune-correspondance" and not a_ete_reouvert(it):
+            equipe = valeur_champ(it["fields"].get(CHAMP_TEAM))
+            if equipe:
+                equipes_categorie[cat][equipe] += 1
+
         assignee = (it["fields"].get("assignee") or {}).get("displayName")
         if not assignee or cat.startswith("ambigu:") or cat == "aucune-correspondance":
             continue
@@ -102,12 +121,12 @@ def calculer(fermes: list) -> dict:
             reouverts_exclus += 1
             continue
         par_categorie[cat][assignee] += 1
-    return par_categorie, repartition, reouverts_exclus
+    return par_categorie, equipes_categorie, repartition, reouverts_exclus
 
 
-def ecrire(par_categorie: dict, repartition: Counter, total: int, libelle: str,
-           reouverts_exclus: int) -> Path:
-    L = ["# Qui résout quoi, par catégorie", ""]
+def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, total: int,
+           libelle: str, reouverts_exclus: int) -> Path:
+    L = ["# Qui résout quoi, et quelle équipe, par catégorie", ""]
     L.append("**Généré automatiquement par `scripts/suggestions.py` — ne pas éditer à la "
              "main, relancer le script pour actualiser.**")
     L.append("")
@@ -119,25 +138,40 @@ def ecrire(par_categorie: dict, repartition: Counter, total: int, libelle: str,
     L.append(f"**{n_classes}/{total} ({pct} %) rattachés à une catégorie** par mot-clé — "
              f"le reste (`aucune-correspondance` ou ambigu) n'a pas de statistique ci-dessous. "
              f"Catégorisation approximative (mots-clés), pas une vraie lecture : à traiter "
-             f"comme une tendance, pas une certitude.")
+             f"comme une tendance, pas une certitude. **Ça ne s'applique qu'à `PERSONNE_SUGGEREE` "
+             f"ci-dessous — `EQUIPE` vient d'un vrai champ Jira (Team), fiable indépendamment "
+             f"de cette catégorisation approximative.**")
     L.append("")
     L.append(f"**{reouverts_exclus} billet(s) exclu(s) du comptage** parce que rouverts après "
              f"fermeture — une réouverture veut dire que ce n'était pas vraiment résolu, donc "
-             f"ça ne compte pas comme une résolution réussie pour qui l'avait fermé.")
+             f"ça ne compte pas comme une résolution réussie pour qui l'avait fermé (ni pour la "
+             f"personne, ni pour l'équipe).")
     L.append("")
 
-    for cat in sorted(par_categorie):
-        compte = par_categorie[cat]
-        total_cat = sum(compte.values())
+    for cat in sorted(set(par_categorie) | set(equipes_categorie)):
         L.append(f"## {cat}")
         L.append("")
-        L.append(f"{total_cat} billets rattachés (mots-clés : "
-                  f"{', '.join(CATEGORIE_SIGNAUX.get(cat, []))}).")
-        L.append("")
-        for nom, n in compte.most_common(5):
-            pct_p = round(100 * n / total_cat, 1)
-            L.append(f"- **{nom}** — {n}/{total_cat} billets ({pct_p} %)")
-        L.append("")
+
+        equipes = equipes_categorie.get(cat)
+        if equipes:
+            total_eq = sum(equipes.values())
+            L.append(f"**Équipe** ({total_eq} billets, champ Team réel) :")
+            L.append("")
+            for nom, n in equipes.most_common(5):
+                pct_e = round(100 * n / total_eq, 1)
+                L.append(f"- **{nom}** — {n}/{total_eq} billets ({pct_e} %)")
+            L.append("")
+
+        compte = par_categorie.get(cat)
+        if compte:
+            total_cat = sum(compte.values())
+            L.append(f"**Personne** ({total_cat} billets rattachés par mots-clés : "
+                      f"{', '.join(CATEGORIE_SIGNAUX.get(cat, []))}) :")
+            L.append("")
+            for nom, n in compte.most_common(5):
+                pct_p = round(100 * n / total_cat, 1)
+                L.append(f"- **{nom}** — {n}/{total_cat} billets ({pct_p} %)")
+            L.append("")
 
     out = DATA_DIR / "personnes.md"
     out.write_text("\n".join(L), encoding="utf-8")
@@ -157,15 +191,16 @@ def main() -> None:
         depuis, libelle = _borne_fenetre(mois), f"{mois} derniers mois"
 
     fermes = charger_fermes(depuis)
-    par_categorie, repartition, reouverts_exclus = calculer(fermes)
+    par_categorie, equipes_categorie, repartition, reouverts_exclus = calculer(fermes)
 
     print(f"Périmètre : {libelle} — {len(fermes)} billets fermés (bruit-test exclu)", file=sys.stderr)
     for cat, n in repartition.most_common():
         print(f"    {n:5d}  {cat}", file=sys.stderr)
-    print(f"  {reouverts_exclus} exclus du comptage par personne (rouverts après fermeture)",
-          file=sys.stderr)
+    print(f"  {reouverts_exclus} exclus du comptage (rouverts après fermeture)", file=sys.stderr)
+    sans_equipe = sum(1 for it in fermes if not valeur_champ(it["fields"].get(CHAMP_TEAM)))
+    print(f"  {sans_equipe} sans champ Team rempli", file=sys.stderr)
 
-    out = ecrire(par_categorie, repartition, len(fermes), libelle, reouverts_exclus)
+    out = ecrire(par_categorie, equipes_categorie, repartition, len(fermes), libelle, reouverts_exclus)
     print(f"\nÉcrit → {out} (local, jamais poussé sur GitHub)", file=sys.stderr)
 
 

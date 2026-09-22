@@ -53,6 +53,22 @@ LABEL_AUTOMATEDCREATION = "automatedcreation"  # One Portail, posé à la créat
 CHAMP_REQUEST_TYPE = "customfield_11200"  # Customer Request Type (JSD / portail)
 
 CHAMP_EXTERNAL_ID = "customfield_17800"  # External issue ID
+CHAMP_TEAM = "customfield_11600"  # Team — vrai champ équipe (ex. "SAAS - PE
+# Cartes", "Suricates"), confirmé rempli sur 49/50 billets récents. Seul champ
+# utile parmi 17 candidats "équipe" trouvés par champs.py — les 16 autres sont
+# vides sur cette instance (Tempo Team, Labor Group, etc. : legacy/inutilisés).
+
+
+def valeur_champ(v):
+    """Un champ Jira personnalisé arrive parfois en chaîne simple, parfois en
+    dict ({"value": ...} ou {"name": ...}) selon le type de champ. Normalise
+    vers une chaîne, ou None si vide — pour ne pas se retrouver avec la
+    représentation Python du dict comme valeur (ex. str({'value': 'X'}))."""
+    if not v:
+        return None
+    if isinstance(v, dict):
+        return v.get("value") or v.get("name") or v.get("displayName")
+    return str(v)
 
 
 def charger_billets() -> list:
