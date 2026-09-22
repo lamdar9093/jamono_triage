@@ -324,7 +324,10 @@ def generer_rapport(a: Analyse) -> str:
     L.append("Aucune IA n'a été utilisée pour produire ce rapport.")
     L.append("")
 
+    avant = [i for i in a.issues if (i["fields"].get("created") or "") < MIGRATION]
+    apres = [i for i in a.issues if (i["fields"].get("created") or "") >= MIGRATION]
     canaux = Counter(_canal(i) for i in a.issues)
+
     L.append("## Canaux d'entrée")
     L.append("")
     L.append("| Canal | Billets | Part |")
@@ -337,6 +340,21 @@ def generer_rapport(a: Analyse) -> str:
              "périmètre. « Création directe » = ni label One Portail, ni Request "
              "Type : billet ouvert à la main dans le board.*")
     L.append("")
+
+    if avant and apres:
+        c_avant, c_apres = Counter(_canal(i) for i in avant), Counter(_canal(i) for i in apres)
+        L.append(f"### Avant / après la migration du {MIGRATION}")
+        L.append("")
+        L.append(f"| Canal | Avant ({len(avant)} billets) | Après ({len(apres)} billets) |")
+        L.append("|---|---:|---:|")
+        for canal in sorted(set(c_avant) | set(c_apres)):
+            pa = round(100 * c_avant.get(canal, 0) / len(avant), 1)
+            pb = round(100 * c_apres.get(canal, 0) / len(apres), 1)
+            L.append(f"| {canal} | {c_avant.get(canal, 0)} ({pa} %) | {c_apres.get(canal, 0)} ({pb} %) |")
+        L.append("")
+        L.append("*L'« après » ne couvre que les jours écoulés depuis la migration — "
+                 "les parts sont comparables, les volumes non.*")
+        L.append("")
 
     atypiques = a.semaines_atypiques(crees, fermes)
     semaine_migration = _semaine(_parse_dt(MIGRATION + "T00:00:00+00:00"))
