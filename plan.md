@@ -204,8 +204,10 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
   2. **Directs** : quelqu'un reçoit un mail ou un chat Teams et crée le billet dans le board. Marqueurs : pas de label, « No request type », Epic Link renseigné.
   3. **Tâches doublons** : quelqu'un recrée dans PECARTES une tâche pour un billet support. Difficiles à repérer automatiquement.
 - **Décision de périmètre (2026-09-21) : l'étape 1 porte sur tous les billets qui arrivent par One Portail**, avec ou sans le label `automatedcreation`, parce que c'est le périmètre métier. Le tableau de bord « Powercard Support » en montre **670** ; le label n'en marque que 195, c'est donc un sous-groupe (la file Triage) et non le critère de périmètre.
-- Critère technique retenu : un billet One Portail a un **Request type** renseigné (« J'ai besoin d'aide »), là où un billet créé au board affiche « No request type ». Champ à confirmer avec `scripts/champs.py`.
 - Chiffres du plan ci-dessus (554 billets, 407 fermés) : instantané plus ancien. Au 2026-09-21 le tableau de bord affiche 670 billets, 422 fermés — le stock grossit, ce qui confirme le décrochage créés/résolus.
+- **Critère de périmètre retenu (2026-09-22) : Customer Request Type renseigné (`customfield_11200`) ET créé depuis le 11 juin 2026** (date du premier billet `automatedcreation`, prise comme date de lancement de One Portail). Historique : le Request Type est utilisé depuis 2016 (bien avant One Portail), donc sa seule présence ne suffit pas — il fallait la borne de date. Ce critère donne **959 billets**, contre 670 sur le tableau de bord Powercard.
+  - L'écart 959 vs 670 n'est pas résolu et n'a pas à l'être : le tableau de bord s'appelle « Powercard Support » et semble n'en montrer qu'une partie (Application Card = Powercard donne 328, donc même pas ça exactement — son JQL réel reste inconnu). Décision explicite : on ne cherche pas à reproduire 670, on garde 959 comme périmètre de travail, car il correspond à la décision métier (toutes les applications de l'équipe, pas seulement Powercard).
+  - Si ce chiffre doit être revalidé un jour, comparer au JQL exact du Rich Filter Jira (jamais obtenu malgré deux demandes).
 - Le type de billet (`Support Request`) ne distingue pas les origines.
 
 ## Étape 1 — Semaine 1 (le rapport)
@@ -218,8 +220,9 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - [x] `scripts/analyser.py` : segmente par origine, options `--directs` et `--tous`. Premier rapport produit sur les 195 — à refaire sur le bon périmètre.
 - [x] `scripts/champs.py` : Customer Request Type = `customfield_11200`, Application Card = `customfield_37502`, External issue ID = `customfield_17800`, Type de demande = `customfield_12447` (rôle à confirmer)
 - [x] Ajoutés à `FIELDS` dans `extraire.py` (et `CHAMP_EXTERNAL_ID` dans `analyser.py`)
-- [ ] **Extraction complète** (`--complet`) : l'incrémental ne rattrape pas les champs manquants sur les billets anciens
-- [ ] Rebasculer `analyser.py` sur le critère Request type, et vérifier qu'on retrouve ~670 billets
+- [x] Extraction complète (`--complet`) faite le 2026-09-22 avec les nouveaux champs
+- [x] `analyser.py` basculé sur le critère Request Type + date de lancement (voir décision ci-dessus) — remplace le filtre par label seul
+- [ ] Relancer `python3 analyser.py` avec le nouveau critère et lire `rapports/donnees-actuelles.md`
 - [ ] Rapport présentable en fin de semaine (livrable 1), sans IA
 
 ## Étapes suivantes
