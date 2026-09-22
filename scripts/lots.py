@@ -20,15 +20,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 LOTS_DIR = BASE_DIR / "lots"
 
-STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved"}
+# Doit rester identique à STATUTS_FERMES dans analyser.py — deux copies
+# divergentes ont déjà causé un sous-comptage silencieux une fois (Rejected
+# manquant ici alors qu'ajouté là-bas).
+STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved", "Rejected"}
 
 
 def charger_fermes() -> list:
-    fichier = DATA_DIR / "billets-anon.json"
-    if not fichier.exists():
-        fichier = DATA_DIR / "billets.json"
+    fichier_anon = DATA_DIR / "billets-anon.json"
+    fichier_brut = DATA_DIR / "billets.json"
+    fichier = fichier_anon if fichier_anon.exists() else fichier_brut
     if not fichier.exists():
         sys.exit("Aucune donnée — lance extraire.py (et anonymiser.py) d'abord.")
+
+    # Même garde-fou que analyser.py : un anon plus vieux que le brut vient
+    # d'une extraction précédente et donnerait un échantillon incomplet
+    # sans rien signaler.
+    if fichier is fichier_anon and fichier_brut.exists():
+        if fichier_anon.stat().st_mtime < fichier_brut.stat().st_mtime:
+            sys.exit(
+                "billets-anon.json est plus ancien que billets.json — il date d'une\n"
+                "extraction précédente. Relance : python scripts/anonymiser.py"
+            )
+
     issues = json.loads(fichier.read_text(encoding="utf-8"))["issues"]
     return [it for it in issues if (it["fields"].get("status") or {}).get("name") in STATUTS_FERMES]
 
