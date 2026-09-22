@@ -323,6 +323,13 @@ def generer_rapport(a: Analyse) -> str:
     L.append("")
     L.append("Aucune IA n'a été utilisée pour produire ce rapport.")
     L.append("")
+    L.append(f"> **Mise en run : {MIGRATION}.** Avant cette date, l'équipe n'était "
+             f"pas en exploitation — ces billets sont du contexte historique, utiles "
+             f"parce qu'ils donnent assez de volume pour des chiffres fiables, mais ils "
+             f"ne décrivent pas l'opération courante. **L'outil de triage, lui, ne "
+             f"travaille que sur les billets postérieurs à cette date.** Chaque section "
+             f"ci-dessous précise sur quelle période elle porte.")
+    L.append("")
 
     avant = [i for i in a.issues if (i["fields"].get("created") or "") < MIGRATION]
     apres = [i for i in a.issues if (i["fields"].get("created") or "") >= MIGRATION]
@@ -393,13 +400,31 @@ def generer_rapport(a: Analyse) -> str:
 
     L.append("## Référence actuelle — la barre à battre")
     L.append("")
-    L.append(f"Sur {ref['total_fermes']} billets fermés :")
+    L.append(f"Sur {ref['total_fermes']} billets fermés, **toute la fenêtre** :")
     L.append(f"- **{ref['reaffectes_pct']} %** réaffectés au moins une fois ({ref['reaffectes']} billets)")
     L.append(f"- **{ref['priorite_changee_pct']} %** avec priorité modifiée après ouverture ({ref['priorite_changee']} billets)")
     L.append(f"- **{ref['reouverts_pct']} %** réouverts après fermeture ({ref['reouverts']} billets)")
     L.append("")
     L.append("Trois chiffres à battre — calculés avant toute IA.")
     L.append("")
+
+    if apres:
+        ref_run = Analyse(apres).reference_actuelle()
+        L.append(f"### Depuis la mise en run ({MIGRATION}) — le périmètre de l'outil")
+        L.append("")
+        if ref_run["total_fermes"] < 300:
+            L.append(f"> **Chiffres préliminaires, à ne pas présenter comme acquis.** "
+                     f"Seulement {ref_run['total_fermes']} billets fermés depuis la mise en "
+                     f"run : à ce volume, un écart de quelques billets déplace un pourcentage "
+                     f"de plusieurs points. Ils sont donnés pour situer, pas pour conclure — "
+                     f"la référence solide reste celle de la fenêtre complète ci-dessus, et "
+                     f"celle-ci deviendra fiable avec quelques mois de recul.")
+            L.append("")
+        L.append(f"Sur {ref_run['total_fermes']} billets fermés :")
+        L.append(f"- {ref_run['reaffectes_pct']} % réaffectés ({ref_run['reaffectes']} billets)")
+        L.append(f"- {ref_run['priorite_changee_pct']} % avec priorité modifiée ({ref_run['priorite_changee']} billets)")
+        L.append(f"- {ref_run['reouverts_pct']} % réouverts ({ref_run['reouverts']} billets)")
+        L.append("")
 
     L.append("## Délais de traitement — médiane et p90, jamais la moyenne seule")
     L.append("")
