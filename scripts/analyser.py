@@ -181,6 +181,21 @@ class Analyse:
                 par_categorie[lbl].append((total_h, net_h))
         return {"priorite": par_priorite, "categorie": par_categorie}
 
+    def billets_vides_suspectes(self, seuil_caracteres: int = 15) -> list:
+        """Titre + description combinés anormalement courts — candidats
+        "bruit-test" (billet de test, vide), pas un verdict. Seuil bas
+        volontairement : un vrai billet, même mal rédigé, dépasse presque
+        toujours ce seuil ; en dessous, c'est un remplissage minimal plutôt
+        qu'un vrai signalement. Ne filtre rien automatiquement — voir
+        knowledge/categories.md, catégorie bruit-test."""
+        candidats = []
+        for it in self.issues:
+            f = it["fields"]
+            texte = f"{f.get('summary') or ''} {f.get('description') or ''}".strip()
+            if len(texte) < seuil_caracteres:
+                candidats.append((it["key"], texte or "(vide)"))
+        return candidats
+
     def doublons_suspectes(self, fenetre_jours: int = 3):
         """Heuristique : même signaleur, création rapprochée, résumés proches
         (indice de Jaccard). Liste de candidats à relire — pas un verdict."""
@@ -285,6 +300,7 @@ def generer_rapport(a: Analyse) -> str:
     crees, fermes, deficits = a.creation_vs_fermeture()
     delais = a.delais()
     doublons = a.doublons_suspectes()
+    vides = a.billets_vides_suspectes()
     non_assignes = a.non_assignes()
     ref = a.reference_actuelle()
     fournisseur = a.lien_fournisseur()
@@ -382,6 +398,24 @@ def generer_rapport(a: Analyse) -> str:
         L.append("*Liste de candidats à relire à l'œil — pas un verdict automatique.*")
     else:
         L.append("Aucun doublon candidat détecté avec l'heuristique actuelle.")
+    L.append("")
+
+    L.append("## Billets vides ou quasi vides (candidats « bruit-test »)")
+    L.append("")
+    if vides:
+        pct_vides = round(100 * len(vides) / len(a.issues), 1) if a.issues else 0
+        L.append(f"**{len(vides)}** billets ({pct_vides} %) ont un titre + description de "
+                  f"moins de 15 caractères au total — trop court pour un vrai signalement.")
+        L.append("")
+        for k, texte in vides[:20]:
+            L.append(f"- {k} — « {texte} »")
+        L.append("")
+        L.append("*Candidats à relire, pas un verdict — voir `knowledge/categories.md`, "
+                  "catégorie `bruit-test`. Si confirmés, à exclure des futurs échantillons "
+                  "(taxonomie, évaluation) ; leur poids dans le déficit créés/fermés "
+                  "ci-dessus n'a pas été vérifié.*")
+    else:
+        L.append("Aucun billet quasi vide détecté avec le seuil actuel (15 caractères).")
     L.append("")
 
     L.append("## Billets non assignés")

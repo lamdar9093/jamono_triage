@@ -163,12 +163,29 @@ des sous-catégories ou une famille « ops » à part.
 garder en observation, pas encore assez de signal pour une signature
 ferme.
 
-## changement-implementation / conformite-validation
+## changement-implementation
 
-**À trancher.** Les notes de lecture sont ambiguës sur ces deux-là
-(transcription depuis photo) — relire directement sur ta machine pour
-confirmer si l'une, l'autre, les deux, ou aucune ne se confirment dans
-l'échantillon.
+**Confirmée (2026-09-22) — un point de donnée, pas encore une signature
+ferme.** Vue sur PECARTES-21976 lors du premier test réel de
+`trier-billet.prompt.md` : demande manuelle planifiée (transfert de
+fichiers entre agences SGCI), sans incident ni dégradation. `DEJA_VU`
+vérifié par l'utilisateur — pas une fausse piste.
+
+- **Signature observable (provisoire)** : demande *planifiée*, à
+  l'initiative de quelqu'un, pas un signalement de panne — verbe à
+  l'impératif ou à la demande (« demande de… », « pouvez-vous… »), pas de
+  symptôme constaté.
+- **Faux voisins** : `fichier-non-reçu` (un transfert *demandé* ici, vs un
+  transfert *attendu et absent* là-bas — même sujet, SGCI/fichiers, mais
+  direction inverse : on initie une action vs on signale un manque)
+- **À faire** : confirmer sur d'autres billets avant de considérer la
+  signature stable — un seul cas ne suffit pas.
+
+## conformite-validation
+
+**Toujours à trancher.** Rien de plus que les notes de lecture ambiguës
+(transcription depuis photo) — relire directement sur la machine de
+travail pour confirmer si elle se confirme dans l'échantillon.
 
 ---
 
@@ -176,7 +193,9 @@ l'échantillon.
 
 - Relire ce fichier contre le texte original (pas la transcription photo)
   et corriger les numéros de billets, citations exactes
-- Trancher `changement-implementation` / `conformite-validation`
+- Trancher `conformite-validation` (voir ci-dessus — `changement-implementation`
+  a un premier point de donnée réel, `conformite-validation` non)
+- Confirmer la signature de `changement-implementation` sur plus d'un billet
 - Confirmer si les « demandes d'ops stéréotypées » (fusion succursale,
   limite temporaire, ouverture bloc code, ID Check non reçu) forment une
   famille à part ou des sous-cas de `limite-solde`
