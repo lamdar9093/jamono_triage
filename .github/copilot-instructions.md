@@ -12,6 +12,16 @@ lire la couche connaissance — jamais l'inverse.
   services et des délais.
 - `knowledge/patterns/` — motifs d'incidents déjà rencontrés.
 
+## Ce que « consulter la connaissance » veut dire
+
+Si une réponse n'est pas dans `knowledge/`, elle n'existe pas pour ce
+triage — écrire la valeur « pas de donnée » prévue par le prompt utilisé,
+jamais une valeur plausible construite autrement (par déduction du nom du
+projet, par convention de nommage devinée, etc.). Un identifiant qui a
+l'air correct n'est pas une donnée : trouvé une fois avec `EQ-CARTES`,
+une équipe qui sonnait juste mais n'existe nulle part dans
+`knowledge/services.md`.
+
 ## Règle de sortie
 
 Tout triage produit le bloc structuré imposé par le prompt utilisé
