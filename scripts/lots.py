@@ -7,10 +7,14 @@ seuls (ce qui était connu à l'ouverture), sans la résolution ni la
 catégorie réelle — c'est ce que Copilot doit deviner. La vérité terrain
 va dans un fichier séparé, jamais dans le lot lui-même.
 
+Par défaut, ne tire que dans les billets postérieurs à la mise en run
+(voir MIGRATION dans analyser.py) — c'est le périmètre sur lequel l'outil
+travaille, donc le seul où un score veut dire quelque chose.
+
 Usage :
-    python scripts/lots.py --n 120 --taille 20
-    python scripts/lots.py --n 200 --sortie lots/taxonomie  # lecture pour la taxonomie,
-                                                              # sans écraser les lots d'évaluation
+    python scripts/lots.py --n 120 --taille 20             # jeu d'évaluation (livrable 3)
+    python scripts/lots.py --mois 12 --n 200 --sortie lots/taxonomie
+    python scripts/lots.py --tous --n 200 --sortie lots/taxonomie
 """
 import argparse
 import json
@@ -18,13 +22,24 @@ import random
 import sys
 from pathlib import Path
 
+# Les constantes de périmètre viennent d'analyser.py plutôt que d'être
+# recopiées : deux copies divergentes de STATUTS_FERMES ont déjà causé un
+# sous-comptage silencieux (Rejected manquant ici, présent là-bas).
+from analyser import (
+    MIGRATION,
+    STATUTS_FERMES,
+    FENETRE_MOIS_DEFAUT,
+    _borne_fenetre,
+)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 
-# Doit rester identique à STATUTS_FERMES dans analyser.py — deux copies
-# divergentes ont déjà causé un sous-comptage silencieux une fois (Rejected
-# manquant ici alors qu'ajouté là-bas).
-STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved", "Rejected"}
+# Titre + description sous ce seuil = billet vide ou de test. Même valeur
+# que billets_vides_suspectes() dans analyser.py. Ces billets ne peuvent
+# pas être triés — ni par Copilot, ni par un humain — donc ils n'ont rien
+# à faire dans un jeu d'évaluation.
+SEUIL_BRUIT_TEST = 15
 
 
 def charger_fermes() -> list:
@@ -46,6 +61,11 @@ def charger_fermes() -> list:
 
     issues = json.loads(fichier.read_text(encoding="utf-8"))["issues"]
     return [it for it in issues if (it["fields"].get("status") or {}).get("name") in STATUTS_FERMES]
+
+
+def _est_bruit_test(issue) -> bool:
+    f = issue["fields"]
+    return len(f"{f.get('summary') or ''} {f.get('description') or ''}".strip()) < SEUIL_BRUIT_TEST
 
 
 def echantillonner(fermes: list, n: int, graine: int = 42) -> list:
@@ -112,10 +132,44 @@ def main() -> None:
                      help="dossier de sortie — défaut lots/ (livrable 3, boucle Copilot). "
                           "Utiliser un sous-dossier distinct (ex. lots/taxonomie) pour toute "
                           "autre lecture, sous peine d'écraser les lots d'évaluation.")
+    ap.add_argument("--mois", type=int, metavar="N",
+                     help=f"élargit à N mois au lieu du seul post-run "
+                          f"(ex. --mois {FENETRE_MOIS_DEFAUT} pour la taxonomie)")
+    ap.add_argument("--tous", action="store_true",
+                     help="tout l'historique, sans borne de date")
     args = ap.parse_args()
 
     fermes = charger_fermes()
-    print(f"{len(fermes)} billets fermés disponibles", file=sys.stderr)
+    total = len(fermes)
+
+    if args.tous:
+        depuis, libelle = "", "tout l'historique"
+    elif args.mois:
+        depuis, libelle = _borne_fenetre(args.mois), f"{args.mois} derniers mois"
+    else:
+        depuis, libelle = MIGRATION, f"depuis la mise en run ({MIGRATION})"
+
+    if depuis:
+        fermes = [it for it in fermes if (it["fields"].get("created") or "") >= depuis]
+
+    avant_bruit = len(fermes)
+    fermes = [it for it in fermes if not _est_bruit_test(it)]
+    ecartes = avant_bruit - len(fermes)
+
+    print(f"Périmètre : {libelle}", file=sys.stderr)
+    print(f"  {total} billets fermés au total → {avant_bruit} dans le périmètre", file=sys.stderr)
+    if ecartes:
+        print(f"  {ecartes} écartés (vides ou de test, < {SEUIL_BRUIT_TEST} caractères)", file=sys.stderr)
+    print(f"  {len(fermes)} exploitables", file=sys.stderr)
+
+    if len(fermes) < args.n:
+        print(f"\n  ATTENTION : {args.n} demandés, seulement {len(fermes)} disponibles.",
+              file=sys.stderr)
+        print(f"  Les lots seront produits avec ce qu'il y a. Pour en avoir plus :",
+              file=sys.stderr)
+        print(f"  élargir la fenêtre (--mois N), ou attendre que le volume monte.\n",
+              file=sys.stderr)
+
     selection = echantillonner(fermes, args.n)
     ecrire_lots(selection, args.taille, args.sortie)
 

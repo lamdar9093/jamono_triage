@@ -1,24 +1,14 @@
 #!/usr/bin/env python3
 """
-Régénère le rapport (livrable 1) — un seul fichier.
+Génère le jeu d'évaluation (livrable 3) : 120 billets en 6 lots, tirés
+uniquement dans le post-mise-en-run, hors billets vides ou de test.
 
-L'ancien rapport post-migration (donnees-actuelles-migration.md) est
-supprimé : 10 jours de données ne suffisent pas pour ses tableaux, et la
-seule chose qu'il apportait (la comparaison des canaux avant/après) est
-maintenant une section du rapport principal.
-
-`analyser.py --depuis-migration` reste disponible pour le jour où le
-système actuel aura assez d'historique.
+Ne PAS ouvrir lots/verite-terrain.json avant d'avoir trié les lots —
+c'est la réponse, elle fausserait la mesure.
 
 Usage : python3 commande.py
 """
 import subprocess
 import sys
-from pathlib import Path
 
-ancien = Path(__file__).resolve().parent.parent / "rapports" / "donnees-actuelles-migration.md"
-if ancien.exists():
-    ancien.unlink()
-    print(f"Supprimé : {ancien.name} (remplacé par une section du rapport principal)")
-
-subprocess.run([sys.executable, "analyser.py"], check=True)
+subprocess.run([sys.executable, "lots.py", "--n", "120", "--taille", "20"], check=True)
