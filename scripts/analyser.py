@@ -26,7 +26,7 @@ RAPPORTS_DIR = BASE_DIR / "rapports"
 
 # Ajuster ces libellés à ceux réellement utilisés dans le projet PECARTES.
 STATUTS_ATTENTE_TIERS = {"Waiting for support", "Waiting for delivery"}
-STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved"}
+STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved", "Rejected"}
 
 # Périmètre One Portail — voir la décision du 2026-09-22 dans plan.md.
 # Un billet One Portail = Customer Request Type renseigné, créé depuis le
