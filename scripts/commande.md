@@ -1,3 +1,16 @@
-Est-ce que refus-transaction, donnees-manquantes, acces-auth (les 3 déjà en brouillon) correspondent à ce que tu vois vraiment ?
-Est-ce qu'il en manque — une catégorie qui revient souvent mais qui n'est dans aucune des 3, ni dans les 5 pressenties de la liste « Reste à faire » ?
-Est-ce que le format (signature observable, mots-clés, équipe, champ obligatoire, faux voisins) est facile à remplir avec de vrais billets, ou est-ce qu'il coince quelque part ?
+python3 -c "
+import json, sys
+sys.path.insert(0, '.')
+import analyser as a
+issues = a.charger_billets()
+an = a.Analyse(issues)
+crees, fermes, deficits = an.creation_vs_fermeture()
+semaines = sorted(set(crees) | set(fermes))
+med_c = a._mediane([crees.get(s,0) for s in semaines])
+med_f = a._mediane([fermes.get(s,0) for s in semaines])
+print(f'Médiane créés/semaine : {med_c}, seuil (x3) : {med_c*3}')
+print(f'Médiane fermés/semaine : {med_f}, seuil (x3) : {med_f*3}')
+print()
+for s in semaines:
+    print(f'{s}: créés={crees.get(s,0)} fermés={fermes.get(s,0)}')
+"
