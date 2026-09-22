@@ -243,8 +243,9 @@ seulement citer le chiffre du jour où il a été mesuré.
 
 - [x] **Lecture complète des 200 billets (10 lots) faite le 2026-09-22**, sur la machine de travail. `knowledge/categories.md` réécrit à partir des résultats : `abend-traitement` (plantage batch mainframe) identifiée comme la plus grosse famille, absente du brouillon initial ; `donnees-manquantes` scindée en `fichier-non-reçu` / `rapport-errone` ; `acces-auth` recadrée en `acces-habilitation` (gestion d'accès interne, pas authentification porteur) ; nouvelles : `tache-recurrente`, `decommissionnement`, `bris-confidentialite` (rare, fort enjeu), `saas`, `loyaute-points` ; `bruit-test` identifiée comme un filtre à appliquer, pas une catégorie. Détail complet dans `knowledge/categories.md`.
 - [ ] **À corriger** : ce premier écrit du fichier vient d'une transcription de captures d'écran (photos de la machine de travail), donc les numéros de billets et citations peuvent contenir des erreurs — à relire contre le texte original sur la machine de travail, pas à prendre à la lettre.
-- [ ] Trancher `changement-implementation` / `conformite-validation` (ambigu dans les notes transcrites)
-- [ ] Vérifier si `bruit-test` fausse aussi `rapports/donnees-actuelles.md` (livrable 1)
+- [x] `changement-implementation` tranchée (2026-09-22), un point de donnée réel (PECARTES-21976). `conformite-validation` reste ouverte, séparément.
+- [ ] Trancher `conformite-validation` (ambigu dans les notes transcrites)
+- [x] Détection `bruit-test` ajoutée à `analyser.py` (2026-09-22) : billets titre+description < 15 caractères, section « Billets vides ou quasi vides » dans le rapport. Générique, testé sur données synthétiques — pas encore vérifié sur les vraies données. **À faire** : relancer `analyser.py`, regarder combien de candidats sortent réellement et si ça vaut la peine de les exclure du déficit créés/fermés.
 - [ ] 120 cas de vérité terrain (livrable 3) — pas commencé. Question ouverte : `lots.py` par défaut tire sur tout l'historique fermé (large), alors que le périmètre mesuré (livrable 1, référence actuelle) est le label One Portail seul. **Avant de trancher, recompter les fermés du périmètre label** (le 22 septembre 2026 c'était 98, insuffisant pour 120 — mais ce nombre grossit chaque jour, ne pas s'y fier sans relancer `analyser.py`).
 
 ## Étape 1 — Semaine 2-3 (skills et mesure)
