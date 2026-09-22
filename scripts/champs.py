@@ -29,6 +29,7 @@ MOTS_CLES = [
     "external", "externe",
     "customer status", "statut client",
     "organization", "organisation", "channel", "canal",
+    "team", "équipe", "equipe", "groupe", "group",
 ]
 
 
@@ -56,15 +57,18 @@ def main() -> None:
     retenus = []
     for c in champs:
         nom = c.get("name", "")
-        if not c.get("custom"):
-            continue
+        # Avant : ne cherchait que les champs personnalisés (custom=True).
+        # Un champ "Team" est souvent un champ standard Jira (Advanced
+        # Roadmaps) — passé inaperçu jusqu'ici pour cette seule raison,
+        # sans même parler du mot-clé "team" qui manquait ci-dessus.
         if tous or any(m in nom.lower() for m in MOTS_CLES):
-            retenus.append((c.get("id", ""), nom))
+            retenus.append((c.get("id", ""), nom, c.get("custom", False)))
 
     retenus.sort(key=lambda x: x[1].lower())
     print(f"{len(champs)} champs au total, {len(retenus)} retenus\n")
-    for cid, nom in retenus:
-        print(f'    "{cid}",  # {nom}')
+    for cid, nom, custom in retenus:
+        etiquette = "personnalisé" if custom else "standard"
+        print(f'    "{cid}",  # {nom}  [{etiquette}]')
 
     if not retenus:
         print("Aucune correspondance — relance avec --tous et cherche à la main.")
