@@ -25,3 +25,19 @@ for i in issues:
 print()
 print('Premier billet automatedcreation créé le :', premiere)
 "
+---
+
+python3 -c "
+import json
+d = json.load(open('../data/billets.json'))
+issues = d['issues']
+
+depuis = '2026-06-11'
+n = sum(1 for i in issues
+        if i['fields'].get('customfield_11200')
+        and i['fields'].get('created', '') >= depuis)
+print(n, 'billets avec Customer Request Type créés depuis le', depuis)
+
+total_periode = sum(1 for i in issues if i['fields'].get('created', '') >= depuis)
+print(total_periode, 'billets créés depuis le', depuis, '(tous, toutes origines)')
+"
