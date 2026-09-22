@@ -9,10 +9,10 @@ Hypothèses à ajuster si ton instance Jira utilise d'autres libellés que
 ceux vus dans les tableaux de bord actuels — voir STATUTS_* ci-dessous.
 
 Usage :
-    python scripts/analyser.py            # file triage (label automatedcreation) — défaut étape 1
-    python scripts/analyser.py --large    # élargi : Request Type renseigné depuis le lancement
-    python scripts/analyser.py --directs  # billets sans le label automatedcreation
-    python scripts/analyser.py --tous     # tout le projet PECARTES
+    python scripts/analyser.py                   # 12 derniers mois (défaut)
+    python scripts/analyser.py --mois 24         # autre fenêtre de temps
+    python scripts/analyser.py --depuis-migration # seulement depuis le 2026-09-12
+    python scripts/analyser.py --tous            # tout l'historique, sans fenêtre
 """
 import json
 import statistics
@@ -29,18 +29,28 @@ RAPPORTS_DIR = BASE_DIR / "rapports"
 STATUTS_ATTENTE_TIERS = {"Waiting for support", "Waiting for delivery"}
 STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved", "Rejected"}
 
-# Périmètre One Portail — voir la décision du 2026-09-22 dans plan.md.
-# Périmètre par défaut : le label "automatedcreation", posé par le système
-# lui-même à la création (~195 billets) — c'est la file triage de l'étape 1.
-# Élargissement prévu plus tard (--large) : Customer Request Type renseigné
-# depuis le lancement de One Portail (~959 billets, toutes applications) ;
-# la date de lancement ci-dessous vient elle-même du premier billet labellisé,
-# donc le critère large reste ancré sur ce même label, pas une donnée indépendante.
-LABEL_AUTOMATEDCREATION = "automatedcreation"  # posé à la création, reste ensuite
-# quel que soit le statut du billet — ce n'est PAS le statut de flux "Triage"
-# (2 billets en ce moment sur le tableau de bord), qui est une étape passagère.
-CHAMP_REQUEST_TYPE = "customfield_11200"  # Customer Request Type (--large)
-LANCEMENT_ONEPORTAIL = "2026-06-11"  # date du billet automatedcreation le plus ancien
+# Périmètre — voir la décision du 2026-09-22 dans plan.md.
+#
+# Le rapport ne filtre PAS par canal d'entrée. Les trois canaux (One Portail,
+# JSD, dashboard PECARTES) font tous partie du travail de l'équipe : tout ce
+# qui tourne pour elle est dans PECARTES. Deux tentatives précédentes de
+# filtrer par label ou par Request Type se sont révélées fausses — le canal
+# est une information à afficher, pas un critère de périmètre.
+#
+# Ce qui borne le rapport est donc une fenêtre de TEMPS, pas un filtre de
+# contenu : assez de profondeur pour voir des tendances, sans remonter à
+# 2016 (le tableau hebdomadaire deviendrait illisible).
+FENETRE_MOIS_DEFAUT = 12
+
+# Bascule vers le système actuel. Avant cette date, autre monde : autres
+# pratiques, autres canaux. Marquée dans le rapport pour que le lecteur voie
+# où commence le système en place, et sert de périmètre à l'outil de triage
+# (--depuis-migration), qui lui ne travaille que sur l'après.
+MIGRATION = "2026-09-12"
+
+# Canaux d'entrée — affichés dans le rapport, jamais utilisés pour filtrer.
+LABEL_AUTOMATEDCREATION = "automatedcreation"  # One Portail, posé à la création
+CHAMP_REQUEST_TYPE = "customfield_11200"  # Customer Request Type (JSD / portail)
 
 CHAMP_EXTERNAL_ID = "customfield_17800"  # External issue ID
 
@@ -314,14 +324,35 @@ def generer_rapport(a: Analyse) -> str:
     L.append("Aucune IA n'a été utilisée pour produire ce rapport.")
     L.append("")
 
+    canaux = Counter(_canal(i) for i in a.issues)
+    L.append("## Canaux d'entrée")
+    L.append("")
+    L.append("| Canal | Billets | Part |")
+    L.append("|---|---:|---:|")
+    for canal, n in canaux.most_common():
+        pct = round(100 * n / len(a.issues), 1) if a.issues else 0
+        L.append(f"| {canal} | {n} | {pct} % |")
+    L.append("")
+    L.append("*Les trois canaux alimentent la même file — aucun n'est exclu du "
+             "périmètre. « Création directe » = ni label One Portail, ni Request "
+             "Type : billet ouvert à la main dans le board.*")
+    L.append("")
+
     atypiques = a.semaines_atypiques(crees, fermes)
+    semaine_migration = _semaine(_parse_dt(MIGRATION + "T00:00:00+00:00"))
 
     L.append("## Créés contre fermés, par semaine")
+    L.append("")
+    L.append(f"La migration vers le système actuel a eu lieu le **{MIGRATION}** "
+             f"(semaine {semaine_migration}) — repérée par ⬆ dans le tableau. "
+             f"Avant cette ligne, c'est l'ancien fonctionnement.")
     L.append("")
     L.append("| Semaine | Créés | Fermés | Déficit cumulé |")
     L.append("|---|---:|---:|---:|")
     for s in sorted(set(crees) | set(fermes)):
         marque = " ⚠️" if s in atypiques else ""
+        if s == semaine_migration:
+            marque += " ⬆ migration"
         L.append(f"| {s}{marque} | {crees.get(s, 0)} | {fermes.get(s, 0)} | {deficits[s]:+d} |")
     L.append("")
     dernier = deficits[max(deficits)] if deficits else 0
@@ -451,31 +482,50 @@ def _a_label_automatedcreation(issue) -> bool:
     return LABEL_AUTOMATEDCREATION in (issue["fields"].get("labels") or [])
 
 
-def _est_oneportail_large(issue) -> bool:
-    """Critère d'élargissement (--large), pas le périmètre par défaut. Ancré
-    sur LANCEMENT_ONEPORTAIL, elle-même dérivée du label — voir commentaire
-    plus haut."""
+def _canal(issue) -> str:
+    """Canal d'entrée présumé — sert à décrire, jamais à filtrer."""
     f = issue["fields"]
-    return bool(f.get(CHAMP_REQUEST_TYPE)) and (f.get("created") or "") >= LANCEMENT_ONEPORTAIL
+    if _a_label_automatedcreation(issue):
+        return "One Portail"
+    if f.get(CHAMP_REQUEST_TYPE):
+        return "JSD / dashboard"
+    return "création directe"
+
+
+def _borne_fenetre(mois: int) -> str:
+    """Date ISO d'il y a `mois` mois, au format comparable aux dates Jira."""
+    maintenant = datetime.now(timezone.utc)
+    annee, m = maintenant.year, maintenant.month - mois
+    while m <= 0:
+        m += 12
+        annee -= 1
+    return f"{annee:04d}-{m:02d}-{maintenant.day:02d}"
 
 
 def main() -> None:
     tous = charger_billets()
-    triage = [i for i in tous if _a_label_automatedcreation(i)]
-    large = [i for i in tous if _est_oneportail_large(i)]
-    autres = [i for i in tous if not _a_label_automatedcreation(i)]
-    print(f"Répartition : {len(tous)} billets = {len(triage)} avec le label "
-          f"automatedcreation + {len(autres)} autres. "
-          f"(Élargissement --large : {len(large)} billets)", file=sys.stderr)
 
     if "--tous" in sys.argv:
-        issues, suffixe = tous, "-tous"
-    elif "--directs" in sys.argv:
-        issues, suffixe = autres, "-directs"
-    elif "--large" in sys.argv:
-        issues, suffixe = large, "-large"
+        depuis, suffixe, libelle = "", "-tous", "tout l'historique"
+    elif "--depuis-migration" in sys.argv:
+        depuis, suffixe, libelle = MIGRATION, "-migration", f"depuis la migration ({MIGRATION})"
     else:
-        issues, suffixe = triage, ""
+        mois = FENETRE_MOIS_DEFAUT
+        if "--mois" in sys.argv:
+            try:
+                mois = int(sys.argv[sys.argv.index("--mois") + 1])
+            except (IndexError, ValueError):
+                sys.exit("--mois attend un nombre, ex. --mois 24")
+        depuis = _borne_fenetre(mois)
+        suffixe = "" if mois == FENETRE_MOIS_DEFAUT else f"-{mois}mois"
+        libelle = f"{mois} derniers mois (depuis {depuis})"
+
+    issues = [i for i in tous if (i["fields"].get("created") or "") >= depuis] if depuis else tous
+
+    canaux = Counter(_canal(i) for i in issues)
+    print(f"Périmètre : {libelle} — {len(issues)} billets sur {len(tous)}", file=sys.stderr)
+    for canal, n in canaux.most_common():
+        print(f"    {n:6d}  {canal}", file=sys.stderr)
 
     a = Analyse(issues)
     rapport = generer_rapport(a)
