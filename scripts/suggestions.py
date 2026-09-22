@@ -27,7 +27,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from analyser import STATUTS_FERMES, FENETRE_MOIS_DEFAUT, _borne_fenetre  # noqa: E402
+from analyser import STATUTS_FERMES, FENETRE_MOIS_DEFAUT, _borne_fenetre, a_ete_reouvert  # noqa: E402
 from lots import SEUIL_BRUIT_TEST  # noqa: E402
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -89,16 +89,24 @@ def charger_fermes(depuis: str) -> list:
 def calculer(fermes: list) -> dict:
     par_categorie = defaultdict(Counter)
     repartition = Counter()
+    reouverts_exclus = 0
     for it in fermes:
         cat = deviner_categorie(it)
         repartition[cat] += 1
         assignee = (it["fields"].get("assignee") or {}).get("displayName")
-        if assignee and not cat.startswith("ambigu:") and cat != "aucune-correspondance":
-            par_categorie[cat][assignee] += 1
-    return par_categorie, repartition
+        if not assignee or cat.startswith("ambigu:") or cat == "aucune-correspondance":
+            continue
+        # Un billet rouvert après fermeture n'a pas été correctement résolu —
+        # ne pas créditer cette "résolution" à qui l'avait fermé.
+        if a_ete_reouvert(it):
+            reouverts_exclus += 1
+            continue
+        par_categorie[cat][assignee] += 1
+    return par_categorie, repartition, reouverts_exclus
 
 
-def ecrire(par_categorie: dict, repartition: Counter, total: int, libelle: str) -> Path:
+def ecrire(par_categorie: dict, repartition: Counter, total: int, libelle: str,
+           reouverts_exclus: int) -> Path:
     L = ["# Qui résout quoi, par catégorie", ""]
     L.append("**Généré automatiquement par `scripts/suggestions.py` — ne pas éditer à la "
              "main, relancer le script pour actualiser.**")
@@ -112,6 +120,10 @@ def ecrire(par_categorie: dict, repartition: Counter, total: int, libelle: str) 
              f"le reste (`aucune-correspondance` ou ambigu) n'a pas de statistique ci-dessous. "
              f"Catégorisation approximative (mots-clés), pas une vraie lecture : à traiter "
              f"comme une tendance, pas une certitude.")
+    L.append("")
+    L.append(f"**{reouverts_exclus} billet(s) exclu(s) du comptage** parce que rouverts après "
+             f"fermeture — une réouverture veut dire que ce n'était pas vraiment résolu, donc "
+             f"ça ne compte pas comme une résolution réussie pour qui l'avait fermé.")
     L.append("")
 
     for cat in sorted(par_categorie):
@@ -145,13 +157,15 @@ def main() -> None:
         depuis, libelle = _borne_fenetre(mois), f"{mois} derniers mois"
 
     fermes = charger_fermes(depuis)
-    par_categorie, repartition = calculer(fermes)
+    par_categorie, repartition, reouverts_exclus = calculer(fermes)
 
     print(f"Périmètre : {libelle} — {len(fermes)} billets fermés (bruit-test exclu)", file=sys.stderr)
     for cat, n in repartition.most_common():
         print(f"    {n:5d}  {cat}", file=sys.stderr)
+    print(f"  {reouverts_exclus} exclus du comptage par personne (rouverts après fermeture)",
+          file=sys.stderr)
 
-    out = ecrire(par_categorie, repartition, len(fermes), libelle)
+    out = ecrire(par_categorie, repartition, len(fermes), libelle, reouverts_exclus)
     print(f"\nÉcrit → {out} (local, jamais poussé sur GitHub)", file=sys.stderr)
 
 

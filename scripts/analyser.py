@@ -77,6 +77,22 @@ def charger_billets() -> list:
     return json.loads(fichier.read_text(encoding="utf-8"))["issues"]
 
 
+def a_ete_reouvert(issue) -> bool:
+    """Un billet fermé puis rouvert n'a pas été correctement résolu par
+    quiconque l'a fermé — utilisé ici pour la référence actuelle, et par
+    suggestions.py pour ne pas créditer une résolution qui ne tenait pas."""
+    ferme_vu = False
+    for h in issue.get("changelog", {}).get("histories", []):
+        for item in h.get("items", []):
+            if item.get("field") == "status":
+                to = item.get("toString")
+                if to in STATUTS_FERMES:
+                    ferme_vu = True
+                elif ferme_vu and to not in STATUTS_FERMES:
+                    return True
+    return False
+
+
 def _parse_dt(s):
     if not s:
         return None
@@ -253,8 +269,7 @@ class Analyse:
             if (f.get("status") or {}).get("name") not in STATUTS_FERMES:
                 continue
             total += 1
-            n_assignee = n_priorite = n_reopen = 0
-            ferme_vu = False
+            n_assignee = n_priorite = 0
             for h in it.get("changelog", {}).get("histories", []):
                 for item in h.get("items", []):
                     champ = item.get("field")
@@ -262,15 +277,9 @@ class Analyse:
                         n_assignee += 1
                     elif champ == "priority":
                         n_priorite += 1
-                    elif champ == "status":
-                        to = item.get("toString")
-                        if to in STATUTS_FERMES:
-                            ferme_vu = True
-                        elif ferme_vu and to not in STATUTS_FERMES:
-                            n_reopen += 1
             if n_assignee >= 2:  # 1er changement = affectation initiale, pas une réaffectation
                 reaffectes += 1
-            if n_reopen > 0:
+            if a_ete_reouvert(it):
                 reouverts += 1
             if n_priorite >= 1:
                 priorite_changee += 1
