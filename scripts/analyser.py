@@ -121,6 +121,21 @@ class Analyse:
             deficits[s] = deficit
         return crees, fermes, deficits
 
+    def semaines_atypiques(self, crees, fermes, seuil: float = 3.0) -> set:
+        """Semaines dont le volume créé ou fermé dépasse `seuil` fois la
+        médiane des autres semaines — signale un événement ponctuel (migration,
+        campagne, incident), pas le rythme normal du triage. Ne dit jamais la
+        cause : à confirmer par un humain avant de présenter le rapport."""
+        semaines = sorted(set(crees) | set(fermes))
+        if len(semaines) < 4:
+            return set()
+        med_c = _mediane([crees.get(s, 0) for s in semaines]) or 1
+        med_f = _mediane([fermes.get(s, 0) for s in semaines]) or 1
+        return {
+            s for s in semaines
+            if crees.get(s, 0) > seuil * med_c or fermes.get(s, 0) > seuil * med_f
+        }
+
     def temps_attente_tiers(self, issue) -> float:
         """Heures cumulées passées dans un statut d'attente tiers, via changelog."""
         histories = issue.get("changelog", {}).get("histories", [])
@@ -283,16 +298,33 @@ def generer_rapport(a: Analyse) -> str:
     L.append("Aucune IA n'a été utilisée pour produire ce rapport.")
     L.append("")
 
+    atypiques = a.semaines_atypiques(crees, fermes)
+
     L.append("## Créés contre fermés, par semaine")
     L.append("")
     L.append("| Semaine | Créés | Fermés | Déficit cumulé |")
     L.append("|---|---:|---:|---:|")
     for s in sorted(set(crees) | set(fermes)):
-        L.append(f"| {s} | {crees.get(s, 0)} | {fermes.get(s, 0)} | {deficits[s]:+d} |")
+        marque = " ⚠️" if s in atypiques else ""
+        L.append(f"| {s}{marque} | {crees.get(s, 0)} | {fermes.get(s, 0)} | {deficits[s]:+d} |")
     L.append("")
     dernier = deficits[max(deficits)] if deficits else 0
     L.append(f"**Déficit cumulé actuel : {dernier:+d} billets.**")
     L.append("")
+    if atypiques:
+        deficit_hors = sum(
+            crees.get(s, 0) - fermes.get(s, 0)
+            for s in sorted(set(crees) | set(fermes)) if s not in atypiques
+        )
+        L.append(
+            f"⚠️ **Semaine(s) marquée(s) : {', '.join(sorted(atypiques))}** — volume "
+            f"créé ou fermé supérieur à 3× la médiane des autres semaines. Signale "
+            f"un événement ponctuel (migration, campagne, incident), pas le rythme "
+            f"normal du triage — la cause reste à confirmer, ce script ne fait que "
+            f"la détecter. Déficit cumulé en excluant ces semaines : "
+            f"**{deficit_hors:+d}** (contre {dernier:+d} brut)."
+        )
+        L.append("")
 
     L.append("## Référence actuelle — la barre à battre")
     L.append("")
