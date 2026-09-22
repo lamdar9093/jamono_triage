@@ -208,6 +208,7 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - **Critère de périmètre retenu (2026-09-22) : Customer Request Type renseigné (`customfield_11200`) ET créé depuis le 11 juin 2026** (date du premier billet `automatedcreation`, prise comme date de lancement de One Portail). Historique : le Request Type est utilisé depuis 2016 (bien avant One Portail), donc sa seule présence ne suffit pas — il fallait la borne de date. Ce critère donne **959 billets**, contre 670 sur le tableau de bord Powercard.
   - L'écart 959 vs 670 n'est pas résolu et n'a pas à l'être : le tableau de bord s'appelle « Powercard Support » et semble n'en montrer qu'une partie (Application Card = Powercard donne 328, donc même pas ça exactement — son JQL réel reste inconnu). Décision explicite : on ne cherche pas à reproduire 670, on garde 959 comme périmètre de travail, car il correspond à la décision métier (toutes les applications de l'équipe, pas seulement Powercard).
   - Si ce chiffre doit être revalidé un jour, comparer au JQL exact du Rich Filter Jira (jamais obtenu malgré deux demandes).
+- **Retour en arrière (2026-09-22, plus tard le même jour) : le périmètre par défaut redevient le label `automatedcreation` seul** (~195 billets), pas le critère large. Raison : le critère large (Request Type + date) est de toute façon *ancré* sur la date du premier billet labellisé — ce n'est pas une donnée indépendante, juste une extrapolation. Le label, lui, est posé par le système sans hypothèse de notre part. Ça colle aussi mieux à l'esprit du plan : commencer étroit et validé (la vraie file triage), élargir plus tard une fois l'étape 1 mesurée. `analyser.py` garde le critère large sous `--large`, pour le jour où on élargira.
 - Le type de billet (`Support Request`) ne distingue pas les origines.
 
 ## Étape 1 — Semaine 1 (le rapport)
@@ -221,8 +222,9 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - [x] `scripts/champs.py` : Customer Request Type = `customfield_11200`, Application Card = `customfield_37502`, External issue ID = `customfield_17800`, Type de demande = `customfield_12447` (rôle à confirmer)
 - [x] Ajoutés à `FIELDS` dans `extraire.py` (et `CHAMP_EXTERNAL_ID` dans `analyser.py`)
 - [x] Extraction complète (`--complet`) faite le 2026-09-22 avec les nouveaux champs
-- [x] `analyser.py` basculé sur le critère Request Type + date de lancement (voir décision ci-dessus) — remplace le filtre par label seul
-- [ ] Relancer `python3 analyser.py` avec le nouveau critère et lire `rapports/donnees-actuelles.md`
+- [x] `analyser.py` : périmètre par défaut = label `automatedcreation` (retour en arrière, voir décision ci-dessus) ; `--large` garde le critère Request Type + date pour plus tard
+- [x] Premier rapport lu (sur le périmètre 959, avant le retour en arrière) : déficit cumulé +204, 35,8 % de priorité changée après ouverture, un pic suspect semaine 2026-S38 (199 créés, à recouper avec l'amas de doublons PECARTES-25432→25452) — à revoir sur le périmètre label seul, le pic en fait peut-être partie ou non
+- [ ] Relancer `python3 analyser.py` (périmètre label, par défaut) et relire `rapports/donnees-actuelles.md`
 - [ ] Rapport présentable en fin de semaine (livrable 1), sans IA
 
 ## Étapes suivantes

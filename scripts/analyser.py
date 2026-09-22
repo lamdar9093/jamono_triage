@@ -9,8 +9,9 @@ Hypothèses à ajuster si ton instance Jira utilise d'autres libellés que
 ceux vus dans les tableaux de bord actuels — voir STATUTS_* ci-dessous.
 
 Usage :
-    python scripts/analyser.py            # billets One Portail (Request Type + depuis lancement)
-    python scripts/analyser.py --directs  # billets créés directement au board (hors One Portail)
+    python scripts/analyser.py            # file triage (label automatedcreation) — défaut étape 1
+    python scripts/analyser.py --large    # élargi : Request Type renseigné depuis le lancement
+    python scripts/analyser.py --directs  # billets sans le label automatedcreation
     python scripts/analyser.py --tous     # tout le projet PECARTES
 """
 import json
@@ -29,14 +30,17 @@ STATUTS_ATTENTE_TIERS = {"Waiting for support", "Waiting for delivery"}
 STATUTS_FERMES = {"Closed", "Done", "Résolu", "Resolved", "Rejected"}
 
 # Périmètre One Portail — voir la décision du 2026-09-22 dans plan.md.
-# Un billet One Portail = Customer Request Type renseigné, créé depuis le
-# lancement de One Portail. Le label "automatedcreation" ne marque qu'un
-# sous-groupe (la file Triage, 195 billets sur 959) : il ne suffit pas seul.
-CHAMP_REQUEST_TYPE = "customfield_11200"  # Customer Request Type
-LANCEMENT_ONEPORTAIL = "2026-06-11"  # date du billet automatedcreation le plus ancien
+# Périmètre par défaut : le label "automatedcreation", posé par le système
+# lui-même à la création (~195 billets) — c'est la file triage de l'étape 1.
+# Élargissement prévu plus tard (--large) : Customer Request Type renseigné
+# depuis le lancement de One Portail (~959 billets, toutes applications) ;
+# la date de lancement ci-dessous vient elle-même du premier billet labellisé,
+# donc le critère large reste ancré sur ce même label, pas une donnée indépendante.
 LABEL_AUTOMATEDCREATION = "automatedcreation"  # posé à la création, reste ensuite
 # quel que soit le statut du billet — ce n'est PAS le statut de flux "Triage"
 # (2 billets en ce moment sur le tableau de bord), qui est une étape passagère.
+CHAMP_REQUEST_TYPE = "customfield_11200"  # Customer Request Type (--large)
+LANCEMENT_ONEPORTAIL = "2026-06-11"  # date du billet automatedcreation le plus ancien
 
 CHAMP_EXTERNAL_ID = "customfield_17800"  # External issue ID
 
@@ -377,31 +381,35 @@ def generer_rapport(a: Analyse) -> str:
     return "\n".join(L)
 
 
-def _est_oneportail(issue) -> bool:
-    f = issue["fields"]
-    return bool(f.get(CHAMP_REQUEST_TYPE)) and (f.get("created") or "") >= LANCEMENT_ONEPORTAIL
-
-
 def _a_label_automatedcreation(issue) -> bool:
     return LABEL_AUTOMATEDCREATION in (issue["fields"].get("labels") or [])
 
 
+def _est_oneportail_large(issue) -> bool:
+    """Critère d'élargissement (--large), pas le périmètre par défaut. Ancré
+    sur LANCEMENT_ONEPORTAIL, elle-même dérivée du label — voir commentaire
+    plus haut."""
+    f = issue["fields"]
+    return bool(f.get(CHAMP_REQUEST_TYPE)) and (f.get("created") or "") >= LANCEMENT_ONEPORTAIL
+
+
 def main() -> None:
     tous = charger_billets()
-    oneportail = [i for i in tous if _est_oneportail(i)]
-    directs = [i for i in tous if not _est_oneportail(i)]
-    avec_label = sum(1 for i in oneportail if _a_label_automatedcreation(i))
-    print(f"Répartition : {len(tous)} billets = {len(oneportail)} One Portail "
-          f"(Request Type + depuis {LANCEMENT_ONEPORTAIL}, dont {avec_label} avec le label "
-          f"automatedcreation) + {len(directs)} autres", file=sys.stderr)
+    triage = [i for i in tous if _a_label_automatedcreation(i)]
+    large = [i for i in tous if _est_oneportail_large(i)]
+    autres = [i for i in tous if not _a_label_automatedcreation(i)]
+    print(f"Répartition : {len(tous)} billets = {len(triage)} avec le label "
+          f"automatedcreation + {len(autres)} autres. "
+          f"(Élargissement --large : {len(large)} billets)", file=sys.stderr)
 
-    # Le périmètre de l'étape 1 (plan.md) est la liste triage, donc One Portail.
     if "--tous" in sys.argv:
         issues, suffixe = tous, "-tous"
     elif "--directs" in sys.argv:
-        issues, suffixe = directs, "-directs"
+        issues, suffixe = autres, "-directs"
+    elif "--large" in sys.argv:
+        issues, suffixe = large, "-large"
     else:
-        issues, suffixe = oneportail, ""
+        issues, suffixe = triage, ""
 
     a = Analyse(issues)
     rapport = generer_rapport(a)
