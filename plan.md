@@ -196,6 +196,12 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 
 À mettre à jour à la fin de chaque session. Le plan ci-dessus ne change pas ; ce journal dit où on en est.
 
+**Convention pour les chiffres de volume (billets, fermés, etc.)** : ce sont
+des instantanés datés, pas des faits stables — One Portail reçoit des
+billets tous les jours. Une décision qui s'appuie sur une comparaison
+(« X est trop petit pour Y ») doit dire de recompter avant de trancher, pas
+seulement citer le chiffre du jour où il a été mesuré.
+
 ## Contexte de terrain (précisé le 2026-09-21)
 
 - Le projet PECARTES contient **25 928 billets**, pas 554. Les 554 des captures d'écran étaient une vue filtrée (les billets One Portail). À vérifier sur les données.
@@ -228,7 +234,7 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - [x] **Vérification croisée (2026-09-22) : le label `automatedcreation` est confirmé comme le bon marqueur.** Sur les 765 billets « large » (Request Type) qui n'ont pas le label : 552 (72 %) n'ont aucun label, le reste porte des labels de produit/domaine (`SaaS_Cartes`, `EEC-Transactionnel`, `EEC-Servicing`, `EEC-Produit`, `micro`, `macro`) — pas des marqueurs d'origine. Ce sont d'anciens billets Service Desk (Request Type utilisé depuis 2016), pas des soumissions One Portail non détectées. Décision définitive, ne pas revenir dessus sans nouvel élément. Ces labels de produit/domaine sont cependant de bons candidats de départ pour `knowledge/categories.md`.
 - [x] **Anomalie S38 expliquée (2026-09-22) : la grande migration.** 134 des 195 billets créés cette semaine-là, et l'amas de doublons (56 paires), viennent de la période de migration — événement ponctuel connu, pas une dérive du triage quotidien. À noter explicitement dans le rapport : le déficit cumulé affiché (+98) est gonflé par cet épisode et ne reflète pas le rythme normal créés/fermés. Envisager une version du rapport avec la semaine S38 isolée ou annotée, pour donner le vrai déficit "hors migration" à côté du chiffre brut.
 - [ ] Rapport présentable en fin de semaine (livrable 1), sans IA — reste à décider comment annoter/isoler S38 (voir ci-dessus), puis rapport final.
-- **Corpus de la taxonomie (semaine 2) : pas restreint au label.** `lots.py` (déjà dans le dépôt, sert livrable 2 et 3) tire sur tous les billets fermés de PECARTES, sans filtre d'origine — cohérent avec le plan, qui ne restreint pas la taxonomie à One Portail. Question encore ouverte, à trancher avant de lancer le vrai jeu d'évaluation (livrable 3, 120 billets) : le tirer du corpus large (représentatif de l'historique, mais pas forcément du trafic One Portail actuel) ou seulement des ~98 fermés du périmètre label (trop peu pour 120) ? Pas bloquant pour la taxonomie (livrable 2), qui peut piocher large sans problème.
+- **Corpus de la taxonomie (semaine 2) : pas restreint au label.** `lots.py` (déjà dans le dépôt, sert livrable 2 et 3) tire sur tous les billets fermés de PECARTES, sans filtre d'origine — cohérent avec le plan, qui ne restreint pas la taxonomie à One Portail. Question encore ouverte, à trancher avant de lancer le vrai jeu d'évaluation (livrable 3, 120 billets) : le tirer du corpus large (représentatif de l'historique, mais pas forcément du trafic One Portail actuel) ou seulement du périmètre label (One Portail reçoit des billets tous les jours — **recompter avant de décider**, ne pas se fier au chiffre du 22 septembre ci-dessous) ? Pas bloquant pour la taxonomie (livrable 2), qui peut piocher large sans problème.
 - [x] `lots.py` (2026-09-22) : ajout de `--sortie` (défaut `lots/`, inchangé). Sans ça, lancer `lots.py` maintenant pour lire du matériel de taxonomie (livrable 2) aurait plus tard écrasé les vrais lots d'évaluation (livrable 3) au prochain lancement — même dossier, même noms de fichiers. `.gitignore` corrigé en même temps : `/lots/*.md` ne couvrait pas un sous-dossier comme `lots/taxonomie/`, remplacé par `/lots/` en entier. Testé (données synthétiques) : les deux sorties coexistent sans se marcher dessus.
 - **Prochaine commande concrète pour démarrer la taxonomie** : `python scripts/lots.py --n 200 --taille 20 --sortie lots/taxonomie` — génère ~10 fichiers markdown à lire dans VS Code pour commencer le regroupement manuel en catégories (`knowledge/categories.md`).
 - [x] Bug corrigé (2026-09-22) : `lots.py` avait sa propre copie de `STATUTS_FERMES`, sans `Rejected` — désynchronisée de celle d'`analyser.py`. Même garde-fou anti-fichier-périmé ajouté que dans `analyser.py`.
@@ -239,7 +245,7 @@ C'est pour ça que le rapport sans IA passe en premier : il t'installe comme cel
 - [ ] **À corriger** : ce premier écrit du fichier vient d'une transcription de captures d'écran (photos de la machine de travail), donc les numéros de billets et citations peuvent contenir des erreurs — à relire contre le texte original sur la machine de travail, pas à prendre à la lettre.
 - [ ] Trancher `changement-implementation` / `conformite-validation` (ambigu dans les notes transcrites)
 - [ ] Vérifier si `bruit-test` fausse aussi `rapports/donnees-actuelles.md` (livrable 1)
-- [ ] 120 cas de vérité terrain (livrable 3) — pas commencé. Question ouverte : `lots.py` par défaut tire sur tout l'historique fermé (large), alors que le périmètre mesuré (livrable 1, référence actuelle) est le label One Portail seul (~98 fermés, insuffisant pour 120) — à trancher avant de lancer l'échantillon d'évaluation.
+- [ ] 120 cas de vérité terrain (livrable 3) — pas commencé. Question ouverte : `lots.py` par défaut tire sur tout l'historique fermé (large), alors que le périmètre mesuré (livrable 1, référence actuelle) est le label One Portail seul. **Avant de trancher, recompter les fermés du périmètre label** (le 22 septembre 2026 c'était 98, insuffisant pour 120 — mais ce nombre grossit chaque jour, ne pas s'y fier sans relancer `analyser.py`).
 
 ## Étape 1 — Semaine 2-3 (skills et mesure)
 
