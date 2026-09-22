@@ -2,9 +2,9 @@
 /data/
 /rapports/*.md
 !/rapports/README.md
-/lots/*.md
-/lots/sorties/
-/lots/verite-terrain.json
+# Tout /lots/ (pas seulement la racine) : un --sortie de lots.py pointant
+# vers un sous-dossier (ex. lots/taxonomie/) doit rester couvert lui aussi.
+/lots/
 /evals/cas/*.md
 !/evals/cas/_gabarit.md
 /evals/resultats.md

@@ -9,6 +9,8 @@ va dans un fichier séparé, jamais dans le lot lui-même.
 
 Usage :
     python scripts/lots.py --n 120 --taille 20
+    python scripts/lots.py --n 200 --sortie lots/taxonomie  # lecture pour la taxonomie,
+                                                              # sans écraser les lots d'évaluation
 """
 import argparse
 import json
@@ -18,7 +20,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
-LOTS_DIR = BASE_DIR / "lots"
 
 # Doit rester identique à STATUTS_FERMES dans analyser.py — deux copies
 # divergentes ont déjà causé un sous-comptage silencieux une fois (Rejected
@@ -65,9 +66,9 @@ def echantillonner(fermes: list, n: int, graine: int = 42) -> list:
     return selection[:n]
 
 
-def ecrire_lots(selection: list, taille: int) -> None:
-    LOTS_DIR.mkdir(exist_ok=True)
-    (LOTS_DIR / "sorties").mkdir(exist_ok=True)
+def ecrire_lots(selection: list, taille: int, sortie: Path) -> None:
+    sortie.mkdir(parents=True, exist_ok=True)
+    (sortie / "sorties").mkdir(exist_ok=True)
     verite_terrain = {}
 
     for i in range(0, len(selection), taille):
@@ -93,26 +94,30 @@ def ecrire_lots(selection: list, taille: int) -> None:
                 # une fois la taxonomie d'équipes stabilisée.
             }
 
-        chemin = LOTS_DIR / f"lot-{numero:02d}.md"
+        chemin = sortie / f"lot-{numero:02d}.md"
         chemin.write_text("\n".join(L), encoding="utf-8")
         print(f"  {chemin.name} — {len(lot)} billets", file=sys.stderr)
 
-    (LOTS_DIR / "verite-terrain.json").write_text(
+    (sortie / "verite-terrain.json").write_text(
         json.dumps(verite_terrain, indent=2, ensure_ascii=False), encoding="utf-8"
     )
-    print(f"Vérité terrain → {LOTS_DIR / 'verite-terrain.json'} (ne pas ouvrir avant de trier !)", file=sys.stderr)
+    print(f"Vérité terrain → {sortie / 'verite-terrain.json'} (ne pas ouvrir avant de trier !)", file=sys.stderr)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=120, help="nombre total de billets à échantillonner")
     ap.add_argument("--taille", type=int, default=20, help="billets par lot")
+    ap.add_argument("--sortie", type=Path, default=BASE_DIR / "lots",
+                     help="dossier de sortie — défaut lots/ (livrable 3, boucle Copilot). "
+                          "Utiliser un sous-dossier distinct (ex. lots/taxonomie) pour toute "
+                          "autre lecture, sous peine d'écraser les lots d'évaluation.")
     args = ap.parse_args()
 
     fermes = charger_fermes()
     print(f"{len(fermes)} billets fermés disponibles", file=sys.stderr)
     selection = echantillonner(fermes, args.n)
-    ecrire_lots(selection, args.taille)
+    ecrire_lots(selection, args.taille, args.sortie)
 
 
 if __name__ == "__main__":
