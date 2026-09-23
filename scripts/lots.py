@@ -112,6 +112,11 @@ def ecrire_lots(selection: list, taille: int, sortie: Path) -> None:
                 "priorite_finale": (f.get("priority") or {}).get("name", "?"),
                 "labels": f.get("labels") or [],
                 "equipe_finale": valeur_champ(f.get(CHAMP_TEAM)),
+                # Assigné final — sert à vérifier PERSONNE_SUGGEREE dans scorer.py.
+                # Proxy imparfait : qui a fermé le billet n'est pas forcément qui
+                # aurait dû le faire (peut refléter la charge du moment, pas un
+                # bon fit) — mais c'est la seule vérité terrain disponible.
+                "assignee_final": (f.get("assignee") or {}).get("displayName"),
             }
 
         chemin = sortie / f"lot-{numero:02d}.md"

@@ -83,6 +83,7 @@ def charger_verite() -> dict:
 
 def noter(propositions: dict, verite: dict) -> dict:
     n = bon_priorite = completude_formee = bon_equipe = n_equipe_verifiable = 0
+    bon_personne = n_personne_verifiable = 0
 
     for cle, verite_billet in verite.items():
         prop = propositions.get(cle)
@@ -103,6 +104,18 @@ def noter(propositions: dict, verite: dict) -> dict:
             if prop.get("EQUIPE", "").strip().lower() == equipe_reelle.strip().lower():
                 bon_equipe += 1
 
+        # Même logique pour PERSONNE_SUGGEREE contre l'assigné réel du billet.
+        # Proxy imparfait (voir lots.py) : qui a fermé le billet reflète parfois
+        # juste la charge du moment (ex. un rôle de triage), pas le meilleur
+        # choix possible — mais c'est la seule vérité terrain disponible, et ça
+        # vaut mieux que zéro mesure sur un champ qui n'était jusqu'ici jamais
+        # vérifié automatiquement.
+        assignee_reel = verite_billet.get("assignee_final")
+        if assignee_reel:
+            n_personne_verifiable += 1
+            if prop.get("PERSONNE_SUGGEREE", "").strip().lower() == assignee_reel.strip().lower():
+                bon_personne += 1
+
     pct = lambda x, total=n: round(100 * x / total, 1) if total else 0.0
     return {
         "n_note": n,
@@ -111,12 +124,16 @@ def noter(propositions: dict, verite: dict) -> dict:
         "completude_formee_pct": pct(completude_formee),
         "equipe_pct": pct(bon_equipe, n_equipe_verifiable),
         "n_equipe_verifiable": n_equipe_verifiable,
+        "personne_pct": pct(bon_personne, n_personne_verifiable),
+        "n_personne_verifiable": n_personne_verifiable,
         # CATEGORIE reste non notée automatiquement : knowledge/categories.md
         # et la vérité terrain n'ont pas de vocabulaire garanti commun tant
         # que la taxonomie n'est pas figée (livrable 2) — comparaison
-        # manuelle pour l'instant. EQUIPE, elle, compare contre un vrai
-        # champ Jira (Team) depuis que ce champ a été identifié — plus
-        # besoin d'attendre la taxonomie pour ce champ-là.
+        # manuelle pour l'instant. EQUIPE et PERSONNE_SUGGEREE comparent
+        # contre des champs Jira réels (Team, assignee), pas besoin d'attendre
+        # la taxonomie pour ceux-là. PERSONNE_SUGGEREE ne teste que "a deviné
+        # qui a fermé le billet", pas "a deviné le bon choix" — les deux ne
+        # sont pas garantis identiques (voir le commentaire dans lots.py).
     }
 
 
@@ -129,11 +146,14 @@ def main() -> None:
     out = EVALS_DIR / "resultats.md"
     horodatage = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     equipe_col = f"{score['equipe_pct']} % (sur {score['n_equipe_verifiable']})"
+    personne_col = f"{score['personne_pct']} % (sur {score['n_personne_verifiable']})"
     ligne = (f"| {horodatage} | {score['n_note']}/{score['n_total_verite']} | "
-             f"{score['priorite_pct']} % | {equipe_col} | {score['completude_formee_pct']} % |\n")
+             f"{score['priorite_pct']} % | {equipe_col} | {personne_col} | "
+             f"{score['completude_formee_pct']} % |\n")
     entete = ("# Résultats d'évaluation\n\n"
-              "| Date | Billets notés | Priorité correcte | Équipe correcte | Complétude renseignée |\n"
-              "|---|---|---|---|---|\n")
+              "| Date | Billets notés | Priorité correcte | Équipe correcte | "
+              "Personne = assigné réel | Complétude renseignée |\n"
+              "|---|---|---|---|---|---|\n")
 
     if out.exists() and "| Date |" in out.read_text(encoding="utf-8"):
         out.write_text(out.read_text(encoding="utf-8") + ligne, encoding="utf-8")

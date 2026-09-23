@@ -59,6 +59,16 @@ CATEGORIE_SIGNAUX = {
     "limite-solde": ["limite temporaire", "plafond atteint"],
 }
 
+# Sous ce nombre de billets dans la catégorie, un ratio élevé (ratio
+# catégorie/global) peut venir du hasard (ex. 1/2 billets = 50%, mais ça ne
+# prouve rien) — pas assez de billets pour distinguer un vrai signal d'un
+# coup de dés. Seuil arbitraire, pas calculé statistiquement (pas de test
+# de significativité ici) — juste pour ne pas afficher une fausse confiance
+# sur un petit échantillon. À ajuster si l'expérience montre qu'il est mal
+# calibré.
+SEUIL_ECHANTILLON_SPECIALISATION = 10
+RATIO_SPECIALISATION = 1.5
+
 
 def _texte(issue) -> str:
     f = issue["fields"]
@@ -164,11 +174,15 @@ def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, t
              f"exclus), et un ratio des deux (×N).** Un ratio proche de ×1 veut dire que la "
              f"personne ferme beaucoup de billets en général (ex. un rôle de triage qui reçoit "
              f"tout par défaut) — pas un signal de spécialisation pour cette catégorie "
-             f"précise, même si son volume brut est le plus élevé. Un ratio ≥ ×1.5 est marqué "
-             f"« spécialisation apparente » — **c'est ce nom-là qu'il faut préférer pour "
-             f"`PERSONNE_SUGGEREE`, pas forcément celui en tête par volume brut.** Sur les "
-             f"petites catégories (moins d'une vingtaine de billets), un ratio élevé peut "
-             f"venir d'un petit échantillon — à pondérer avec le nombre brut affiché.")
+             f"précise, même si son volume brut est le plus élevé. Un ratio ≥ ×{RATIO_SPECIALISATION} "
+             f"sur au moins {SEUIL_ECHANTILLON_SPECIALISATION} billets est marqué « spécialisation "
+             f"apparente » — **c'est ce nom-là qu'il faut préférer pour `PERSONNE_SUGGEREE`, pas "
+             f"forcément celui en tête par volume brut.** En dessous de "
+             f"{SEUIL_ECHANTILLON_SPECIALISATION} billets, un ratio élevé est marqué « signal "
+             f"faible » — peut venir du hasard sur un petit échantillon, pas une vraie preuve. "
+             f"**Seuils choisis à l'instinct, pas validés statistiquement** — `scorer.py` "
+             f"compare maintenant `PERSONNE_SUGGEREE` à l'assigné réel pour vérifier si ce "
+             f"choix aide vraiment (voir evals/resultats.md une fois quelques lots notés).")
     L.append("")
 
     for cat in sorted(set(par_categorie) | set(equipes_categorie)):
@@ -198,7 +212,12 @@ def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, t
                 pct_g = round(100 * part_globale, 1)
                 lift = (part_cat / part_globale) if part_globale else None
                 lift_txt = f"×{round(lift, 1)}" if lift is not None else "×?"
-                marque = " — **spécialisation apparente**" if lift and lift >= 1.5 else ""
+                if lift and lift >= RATIO_SPECIALISATION and n >= SEUIL_ECHANTILLON_SPECIALISATION:
+                    marque = " — **spécialisation apparente**"
+                elif lift and lift >= RATIO_SPECIALISATION:
+                    marque = f" — signal faible (échantillon réduit, {n} billets)"
+                else:
+                    marque = ""
                 L.append(f"- **{nom}** — {n}/{total_cat} billets ({pct_p} % de la catégorie ; "
                          f"{pct_g} % de son volume global ; {lift_txt}{marque})")
             L.append("")
