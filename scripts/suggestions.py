@@ -98,6 +98,12 @@ def calculer(fermes: list) -> dict:
     par_categorie = defaultdict(Counter)  # catégorie -> {personne: n}
     equipes_categorie = defaultdict(Counter)  # catégorie -> {équipe: n}
     repartition = Counter()
+    # Part globale de chaque personne, TOUTES catégories confondues (y compris
+    # aucune-correspondance/ambigu) — sert de référence pour distinguer une
+    # vraie spécialisation d'un simple volume élevé (ex. Carmen Leccese ferme
+    # 35 % de tous les billets, donc elle ressort #1 dans presque toutes les
+    # catégories mécaniquement, pas forcément parce qu'elle s'y spécialise).
+    global_compte = Counter()
     reouverts_exclus = 0
     for it in fermes:
         cat = deviner_categorie(it)
@@ -113,19 +119,24 @@ def calculer(fermes: list) -> dict:
                 equipes_categorie[cat][equipe] += 1
 
         assignee = (it["fields"].get("assignee") or {}).get("displayName")
-        if not assignee or cat.startswith("ambigu:") or cat == "aucune-correspondance":
+        if not assignee:
             continue
         # Un billet rouvert après fermeture n'a pas été correctement résolu —
         # ne pas créditer cette "résolution" à qui l'avait fermé.
         if a_ete_reouvert(it):
-            reouverts_exclus += 1
+            if not cat.startswith("ambigu:") and cat != "aucune-correspondance":
+                reouverts_exclus += 1
+            continue
+
+        global_compte[assignee] += 1
+        if cat.startswith("ambigu:") or cat == "aucune-correspondance":
             continue
         par_categorie[cat][assignee] += 1
-    return par_categorie, equipes_categorie, repartition, reouverts_exclus
+    return par_categorie, equipes_categorie, repartition, reouverts_exclus, global_compte
 
 
 def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, total: int,
-           libelle: str, reouverts_exclus: int) -> Path:
+           libelle: str, reouverts_exclus: int, global_compte: Counter) -> Path:
     L = ["# Qui résout quoi, et quelle équipe, par catégorie", ""]
     L.append("**Généré automatiquement par `scripts/suggestions.py` — ne pas éditer à la "
              "main, relancer le script pour actualiser.**")
@@ -146,6 +157,14 @@ def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, t
              f"fermeture — une réouverture veut dire que ce n'était pas vraiment résolu, donc "
              f"ça ne compte pas comme une résolution réussie pour qui l'avait fermé (ni pour la "
              f"personne, ni pour l'équipe).")
+    L.append("")
+    total_global = sum(global_compte.values())
+    L.append(f"**Sous « Personne », chaque nom affiche deux pourcentages : sa part dans la "
+             f"catégorie, et sa part globale ({total_global} billets, toutes catégories "
+             f"confondues, rouverts exclus).** Si les deux sont proches, la personne ferme "
+             f"beaucoup de billets en général — pas un signal de spécialisation pour cette "
+             f"catégorie précise. Si la part dans la catégorie dépasse nettement sa part "
+             f"globale, c'est un vrai signal.")
     L.append("")
 
     for cat in sorted(set(par_categorie) | set(equipes_categorie)):
@@ -170,7 +189,9 @@ def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, t
             L.append("")
             for nom, n in compte.most_common(5):
                 pct_p = round(100 * n / total_cat, 1)
-                L.append(f"- **{nom}** — {n}/{total_cat} billets ({pct_p} %)")
+                pct_g = round(100 * global_compte.get(nom, 0) / total_global, 1) if total_global else 0.0
+                L.append(f"- **{nom}** — {n}/{total_cat} billets ({pct_p} % de la catégorie ; "
+                         f"{pct_g} % de son volume global tous billets confondus)")
             L.append("")
 
     out = DATA_DIR / "personnes.md"
@@ -191,7 +212,7 @@ def main() -> None:
         depuis, libelle = _borne_fenetre(mois), f"{mois} derniers mois"
 
     fermes = charger_fermes(depuis)
-    par_categorie, equipes_categorie, repartition, reouverts_exclus = calculer(fermes)
+    par_categorie, equipes_categorie, repartition, reouverts_exclus, global_compte = calculer(fermes)
 
     print(f"Périmètre : {libelle} — {len(fermes)} billets fermés (bruit-test exclu)", file=sys.stderr)
     for cat, n in repartition.most_common():
@@ -199,8 +220,15 @@ def main() -> None:
     print(f"  {reouverts_exclus} exclus du comptage (rouverts après fermeture)", file=sys.stderr)
     sans_equipe = sum(1 for it in fermes if not valeur_champ(it["fields"].get(CHAMP_TEAM)))
     print(f"  {sans_equipe} sans champ Team rempli", file=sys.stderr)
+    total_global = sum(global_compte.values())
+    top = global_compte.most_common(1)
+    if top:
+        nom, n = top[0]
+        print(f"  {nom} ferme {n}/{total_global} ({round(100*n/total_global, 1)} %) de tous "
+              f"les billets crédités, toutes catégories confondues", file=sys.stderr)
 
-    out = ecrire(par_categorie, equipes_categorie, repartition, len(fermes), libelle, reouverts_exclus)
+    out = ecrire(par_categorie, equipes_categorie, repartition, len(fermes), libelle,
+                 reouverts_exclus, global_compte)
     print(f"\nÉcrit → {out} (local, jamais poussé sur GitHub)", file=sys.stderr)
 
 
