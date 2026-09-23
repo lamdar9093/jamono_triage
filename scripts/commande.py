@@ -1,51 +1,42 @@
 #!/usr/bin/env python3
 """
-Patch ponctuel : ajoute assignee_final à lots/verite-terrain.json existant,
-SANS retirer un nouvel échantillon.
+Diagnostic : les billets déjà répondus dans lots/sorties/lot-01.md et
+lot-02.md (par Copilot) sont-ils toujours dans lots/verite-terrain.json ?
 
-Pourquoi pas juste relancer lots.py ? Le tirage (echantillonner) dépend de
-l'ordre des billets dans billets.json. Après le --complet de tout à l'heure,
-cet ordre a changé — relancer lots.py régénérerait une sélection différente
-et écraserait lot-01.md / lot-02.md, cassant la correspondance avec ce qui
-est déjà collé dans lots/sorties/. Ce script ne touche qu'au JSON de vérité
-terrain, pas aux fichiers lot-XX.md.
-
-Idempotent : relancer plusieurs fois ne fait rien de plus après le premier
-passage (saute les clés déjà patchées).
+Contexte : lots.py a été relancé après le --complet, qui a changé l'ordre
+des billets dans billets.json. Le tirage aléatoire (graine fixe, mais sur
+un ordre d'entrée différent) a donc pu sélectionner un échantillon
+différent (101 billets au lieu de 123). Si les clés déjà répondues n'y
+sont plus, ce travail Copilot est orphelin : scorer.py les ignore
+silencieusement (pas d'erreur, juste absent du compte).
 """
 import json
+import re
 import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = BASE_DIR / "data"
 LOTS_DIR = BASE_DIR / "lots"
+SORTIES_DIR = LOTS_DIR / "sorties"
 
 verite_path = LOTS_DIR / "verite-terrain.json"
-billets_path = DATA_DIR / "billets.json"
-
 if not verite_path.exists():
-    sys.exit(f"{verite_path} introuvable — lance lots.py d'abord (livrable 3).")
-if not billets_path.exists():
-    sys.exit(f"{billets_path} introuvable — lance extraire.py d'abord.")
-
+    sys.exit(f"{verite_path} introuvable.")
 verite = json.loads(verite_path.read_text(encoding="utf-8"))
-issues = json.loads(billets_path.read_text(encoding="utf-8"))["issues"]
-par_cle = {it["key"]: it for it in issues}
+verite_cles = set(verite.keys())
+print(f"verite-terrain.json actuel : {len(verite_cles)} billets", file=sys.stderr)
 
-deja_patches = manquants = patches = 0
-for cle, v in verite.items():
-    if "assignee_final" in v:
-        deja_patches += 1
-        continue
-    it = par_cle.get(cle)
-    if not it:
-        manquants += 1
-        v["assignee_final"] = None
-        continue
-    v["assignee_final"] = (it["fields"].get("assignee") or {}).get("displayName")
-    patches += 1
+CLE_RE = re.compile(r"^###\s*([A-Z]+-\d+)", re.MULTILINE)
 
-verite_path.write_text(json.dumps(verite, indent=2, ensure_ascii=False), encoding="utf-8")
-print(f"{len(verite)} billets dans {verite_path.name} — {patches} patchés, "
-      f"{deja_patches} déjà à jour, {manquants} introuvables dans billets.json", file=sys.stderr)
+if not SORTIES_DIR.exists():
+    sys.exit(f"{SORTIES_DIR} introuvable.")
+
+for chemin in sorted(SORTIES_DIR.glob("*.md")):
+    cles_repondues = set(CLE_RE.findall(chemin.read_text(encoding="utf-8")))
+    encore_presentes = cles_repondues & verite_cles
+    perdues = cles_repondues - verite_cles
+    print(f"\n{chemin.name} : {len(cles_repondues)} billets répondus — "
+          f"{len(encore_presentes)} encore dans verite-terrain.json, "
+          f"{len(perdues)} perdus (plus dans l'échantillon actuel)", file=sys.stderr)
+    if perdues:
+        print(f"  clés perdues : {sorted(perdues)}", file=sys.stderr)
