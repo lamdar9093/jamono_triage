@@ -1,65 +1,51 @@
 #!/usr/bin/env python3
 """
-Diagnostic : Carmen Lecceses domine-t-elle plusieurs catégories dans
-data/personnes.md par spécialisation réelle, ou simplement parce qu'elle
-ferme le plus de billets, toutes catégories confondues (auquel cas elle
-"gagnerait" mécaniquement chaque catégorie par volume) ?
+Patch ponctuel : ajoute assignee_final à lots/verite-terrain.json existant,
+SANS retirer un nouvel échantillon.
 
-Compare sa part GLOBALE (tous billets fermés du périmètre, rouverts
-exclus) à sa part DANS CHAQUE catégorie où elle apparaît en tête.
+Pourquoi pas juste relancer lots.py ? Le tirage (echantillonner) dépend de
+l'ordre des billets dans billets.json. Après le --complet de tout à l'heure,
+cet ordre a changé — relancer lots.py régénérerait une sélection différente
+et écraserait lot-01.md / lot-02.md, cassant la correspondance avec ce qui
+est déjà collé dans lots/sorties/. Ce script ne touche qu'au JSON de vérité
+terrain, pas aux fichiers lot-XX.md.
+
+Idempotent : relancer plusieurs fois ne fait rien de plus après le premier
+passage (saute les clés déjà patchées).
 """
+import json
 import sys
 from pathlib import Path
-from collections import Counter
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from analyser import FENETRE_MOIS_DEFAUT, _borne_fenetre, a_ete_reouvert  # noqa: E402
-from suggestions import charger_fermes, deviner_categorie  # noqa: E402
+BASE_DIR = Path(__file__).resolve().parent.parent
+DATA_DIR = BASE_DIR / "data"
+LOTS_DIR = BASE_DIR / "lots"
 
-depuis = _borne_fenetre(FENETRE_MOIS_DEFAUT)
-fermes = charger_fermes(depuis)
+verite_path = LOTS_DIR / "verite-terrain.json"
+billets_path = DATA_DIR / "billets.json"
 
-# Part globale de chaque personne, TOUTES catégories confondues (y compris
-# aucune-correspondance/ambigu — on regarde ici qui ferme des billets en
-# général, pas seulement dans les catégories à mots-clés).
-global_compte = Counter()
-for it in fermes:
-    if a_ete_reouvert(it):
+if not verite_path.exists():
+    sys.exit(f"{verite_path} introuvable — lance lots.py d'abord (livrable 3).")
+if not billets_path.exists():
+    sys.exit(f"{billets_path} introuvable — lance extraire.py d'abord.")
+
+verite = json.loads(verite_path.read_text(encoding="utf-8"))
+issues = json.loads(billets_path.read_text(encoding="utf-8"))["issues"]
+par_cle = {it["key"]: it for it in issues}
+
+deja_patches = manquants = patches = 0
+for cle, v in verite.items():
+    if "assignee_final" in v:
+        deja_patches += 1
         continue
-    assignee = (it["fields"].get("assignee") or {}).get("displayName")
-    if assignee:
-        global_compte[assignee] += 1
-
-total_global = sum(global_compte.values())
-print(f"Total billets fermés créditables (rouverts exclus) : {total_global}\n")
-print("Top 10 toutes catégories confondues :")
-for nom, n in global_compte.most_common(10):
-    pct = round(100 * n / total_global, 1)
-    print(f"  {nom:30s} {n:5d}  ({pct} %)")
-
-carmen = global_compte.get("Carmen Lecceses", 0)
-pct_carmen = round(100 * carmen / total_global, 1) if total_global else 0
-print(f"\nPart globale de Carmen Lecceses : {carmen}/{total_global} ({pct_carmen} %)")
-
-# Détail par catégorie où elle apparaissait en tête (abend-traitement,
-# acces-habilitation, tache-recurrente) pour comparaison directe.
-par_categorie = Counter()
-cat_total = Counter()
-for it in fermes:
-    if a_ete_reouvert(it):
+    it = par_cle.get(cle)
+    if not it:
+        manquants += 1
+        v["assignee_final"] = None
         continue
-    cat = deviner_categorie(it)
-    if cat.startswith("ambigu:") or cat == "aucune-correspondance":
-        continue
-    assignee = (it["fields"].get("assignee") or {}).get("displayName")
-    if not assignee:
-        continue
-    cat_total[cat] += 1
-    if assignee == "Carmen Lecceses":
-        par_categorie[cat] += 1
+    v["assignee_final"] = (it["fields"].get("assignee") or {}).get("displayName")
+    patches += 1
 
-print("\nPart de Carmen par catégorie (pour comparaison à sa part globale) :")
-for cat, total in sorted(cat_total.items()):
-    n = par_categorie.get(cat, 0)
-    pct = round(100 * n / total, 1) if total else 0
-    print(f"  {cat:25s} {n:4d}/{total:<4d} ({pct} %)")
+verite_path.write_text(json.dumps(verite, indent=2, ensure_ascii=False), encoding="utf-8")
+print(f"{len(verite)} billets dans {verite_path.name} — {patches} patchés, "
+      f"{deja_patches} déjà à jour, {manquants} introuvables dans billets.json", file=sys.stderr)
