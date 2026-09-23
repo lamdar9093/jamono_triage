@@ -159,12 +159,16 @@ def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, t
              f"personne, ni pour l'équipe).")
     L.append("")
     total_global = sum(global_compte.values())
-    L.append(f"**Sous « Personne », chaque nom affiche deux pourcentages : sa part dans la "
-             f"catégorie, et sa part globale ({total_global} billets, toutes catégories "
-             f"confondues, rouverts exclus).** Si les deux sont proches, la personne ferme "
-             f"beaucoup de billets en général — pas un signal de spécialisation pour cette "
-             f"catégorie précise. Si la part dans la catégorie dépasse nettement sa part "
-             f"globale, c'est un vrai signal.")
+    L.append(f"**Sous « Personne », chaque nom affiche sa part dans la catégorie, sa part "
+             f"globale ({total_global} billets, toutes catégories confondues, rouverts "
+             f"exclus), et un ratio des deux (×N).** Un ratio proche de ×1 veut dire que la "
+             f"personne ferme beaucoup de billets en général (ex. un rôle de triage qui reçoit "
+             f"tout par défaut) — pas un signal de spécialisation pour cette catégorie "
+             f"précise, même si son volume brut est le plus élevé. Un ratio ≥ ×1.5 est marqué "
+             f"« spécialisation apparente » — **c'est ce nom-là qu'il faut préférer pour "
+             f"`PERSONNE_SUGGEREE`, pas forcément celui en tête par volume brut.** Sur les "
+             f"petites catégories (moins d'une vingtaine de billets), un ratio élevé peut "
+             f"venir d'un petit échantillon — à pondérer avec le nombre brut affiché.")
     L.append("")
 
     for cat in sorted(set(par_categorie) | set(equipes_categorie)):
@@ -188,10 +192,15 @@ def ecrire(par_categorie: dict, equipes_categorie: dict, repartition: Counter, t
                       f"{', '.join(CATEGORIE_SIGNAUX.get(cat, []))}) :")
             L.append("")
             for nom, n in compte.most_common(5):
-                pct_p = round(100 * n / total_cat, 1)
-                pct_g = round(100 * global_compte.get(nom, 0) / total_global, 1) if total_global else 0.0
+                part_cat = n / total_cat
+                part_globale = (global_compte.get(nom, 0) / total_global) if total_global else 0.0
+                pct_p = round(100 * part_cat, 1)
+                pct_g = round(100 * part_globale, 1)
+                lift = (part_cat / part_globale) if part_globale else None
+                lift_txt = f"×{round(lift, 1)}" if lift is not None else "×?"
+                marque = " — **spécialisation apparente**" if lift and lift >= 1.5 else ""
                 L.append(f"- **{nom}** — {n}/{total_cat} billets ({pct_p} % de la catégorie ; "
-                         f"{pct_g} % de son volume global tous billets confondus)")
+                         f"{pct_g} % de son volume global ; {lift_txt}{marque})")
             L.append("")
 
     out = DATA_DIR / "personnes.md"

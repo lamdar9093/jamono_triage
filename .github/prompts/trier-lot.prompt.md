@@ -16,7 +16,7 @@ CATEGORIE: <slug depuis knowledge/categories.md, ou "aucune-correspondance">
 PRIORITE: <niveau depuis knowledge/severite.md>
 PRIORITE_CRITERE: <une phrase — le critère observable qui justifie ce niveau>
 EQUIPE: <nom d'équipe depuis data/personnes.md pour cette catégorie, ou "aucune donnée suffisante" si le fichier n'existe pas ou n'a rien pour cette catégorie>
-PERSONNE_SUGGEREE: <nom depuis data/personnes.md pour cette catégorie, ou "aucune donnée suffisante" si le fichier n'existe pas ou n'a rien pour cette catégorie>
+PERSONNE_SUGGEREE: <nom depuis la section "Personne" de data/personnes.md pour cette catégorie, ou "aucune donnée suffisante" si le fichier n'existe pas ou n'a rien pour cette catégorie. Préférer un nom marqué "spécialisation apparente" (ratio ×N ≥ 1.5) au nom en tête par volume brut si ce dernier a un ratio proche de ×1 — un ratio proche de ×1 veut dire que cette personne ferme beaucoup de billets en général (rôle de triage/répartition), pas qu'elle est spécialiste de cette catégorie précise>
 PERSONNE_PREUVE: <ex: "a résolu 14/22 derniers billets de cette catégorie">
 COMPLETUDE: <complet|incomplet>
 COMPLETUDE_MANQUE: <champs manquants séparés par ";", ou "aucun">
